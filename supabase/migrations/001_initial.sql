@@ -160,3 +160,12 @@ grant usage on schema public to service_role;
 grant all privileges on all tables in schema public to service_role;
 grant all privileges on all sequences in schema public to service_role;
 grant select on public.student_login_roster to service_role;
+
+-- Data API를 통한 공개 로그인 목록과 인증 사용자 학습 API 권한입니다.
+grant select on public.classes to anon, authenticated;
+grant select on public.students to authenticated;
+grant select on public.teachers to authenticated;
+grant select on public.questions to authenticated;
+grant select, insert, update on public.learning_records to authenticated;
+grant select, insert on public.diagnostic_responses to authenticated;
+grant select, insert, update on public.teacher_notes to authenticated;
