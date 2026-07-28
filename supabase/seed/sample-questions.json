@@ -1,0 +1,30 @@
+[
+  {
+    "id": "grade5-semester1-fraction-q1",
+    "grade": 5,
+    "semester": 1,
+    "unit": "분수의 덧셈과 뺄셈",
+    "lesson": "분모가 다른 분수의 덧셈",
+    "page": 52,
+    "question_number": 1,
+    "question_text": "1/3 + 1/4을 계산하세요.",
+    "correct_answer": "7/12",
+    "accepted_answers": ["7/12"],
+    "concepts": ["분모 확인", "통분", "최소공배수", "동치분수", "분자 계산"],
+    "diagnostic_start_id": "q1",
+    "is_active": true,
+    "diagnostic_nodes": [
+      {"id":"q1","stage":1,"type":"YES_NO_UNKNOWN","question":"두 분수의 분모가 같은가요?","options":[{"value":"YES","label":"예","nextNodeId":"q1-retry","errorType":"분모 확인 오류","repeatQuestion":true},{"value":"NO","label":"아니요","nextNodeId":"q2"},{"value":"UNKNOWN","label":"잘 모르겠어요","nextNodeId":"q1-concept","errorType":"분모 개념 확인 필요","concept":"분모는 전체를 똑같이 나눈 수를 나타내요."}]},
+      {"id":"q1-retry","stage":1,"type":"YES_NO_UNKNOWN","question":"분모 3과 4를 다시 비교해 볼까요? 서로 같은가요?","options":[{"value":"YES","label":"예","nextNodeId":"q1-retry","errorType":"분모 확인 오류","repeatQuestion":true},{"value":"NO","label":"아니요","nextNodeId":"q2"},{"value":"UNKNOWN","label":"잘 모르겠어요","nextNodeId":"q1-concept","errorType":"분모 개념 확인 필요","concept":"분모는 분수 아래 숫자예요. 3과 4는 서로 달라요."}]},
+      {"id":"q1-concept","stage":2,"type":"CHOICE","question":"분모가 다른 두 분수를 더할 때, 분모를 같게 만드는 것을 무엇이라고 하나요?","options":[{"value":"통분","label":"통분하기","nextNodeId":"q2","concept":"통분은 분모를 같게 만드는 과정이에요."},{"value":"약분","label":"약분하기","nextNodeId":"q1-example","errorType":"연산 순서 이해 부족","concept":"약분은 분수를 더 간단히 만드는 과정이고, 통분과 달라요."},{"value":"UNKNOWN","label":"잘 모르겠어요","nextNodeId":"q1-example","errorType":"통분 개념 미형성","concept":"분모가 다르면 먼저 같은 분모로 바꾸어야 해요."}],"example":"1/2와 1/3을 더하려면 6을 공통 분모로 사용할 수 있어요."},
+      {"id":"q1-example","stage":3,"type":"CHOICE","question":"쉬운 예시에서 1/2의 분모를 6으로 만들 때 분자와 분모에 몇을 곱할까요?","options":[{"value":"3","label":"3","nextNodeId":"q2","concept":"분자와 분모에 같은 수를 곱하면 같은 크기의 분수가 돼요."},{"value":"2","label":"2","nextNodeId":"q2","errorType":"동치분수 이해 부족","concept":"분모를 6으로 만들려면 2에 3을 곱해야 해요."},{"value":"UNKNOWN","label":"잘 모르겠어요","nextNodeId":"q2","errorType":"동치분수 이해 부족","concept":"분모가 몇 배가 되었는지 살펴보세요."}],"example":"2×3=6이므로 1/2는 3/6으로 바꿀 수 있어요."},
+      {"id":"q2","stage":1,"type":"CHOICE","question":"분모가 다를 때 가장 먼저 해야 할 일은 무엇인가요?","options":[{"value":"분자끼리 더한다","label":"분자끼리 더한다","nextNodeId":"q2-help","errorType":"통분 개념 부족"},{"value":"통분한다","label":"통분한다","nextNodeId":"q3"},{"value":"약분한다","label":"약분한다","nextNodeId":"q2-help","errorType":"연산 순서 이해 부족"},{"value":"UNKNOWN","label":"잘 모르겠어요","nextNodeId":"q2-help","errorType":"통분 개념 미형성"}]},
+      {"id":"q2-help","stage":2,"type":"CHOICE","question":"통분은 분모를 어떻게 바꾸는 과정일까요?","options":[{"value":"같게","label":"같게 만들어요","nextNodeId":"q3","concept":"통분은 분모를 같은 수로 맞추는 과정이에요."},{"value":"다르게","label":"다르게 만들어요","nextNodeId":"q3","errorType":"통분 개념 부족","concept":"통분의 목표는 두 분모를 같게 만드는 것이에요."},{"value":"UNKNOWN","label":"잘 모르겠어요","nextNodeId":"q3","errorType":"통분 개념 미형성","concept":"두 분모를 하나의 같은 분모로 맞추어 보세요."}],"example":"1/3과 1/4의 분모를 12로 맞추면 4/12와 3/12가 돼요."},
+      {"id":"q3","stage":2,"type":"NUMBER","question":"3과 4의 최소공배수는 무엇인가요?","options":[{"value":"12","label":"12","nextNodeId":"q4"},{"value":"UNKNOWN","label":"잘 모르겠어요","nextNodeId":"q3-help","errorType":"최소공배수 이해 부족"},{"value":"WRONG","label":"다른 수","nextNodeId":"q3-help","errorType":"최소공배수 이해 부족"}]},
+      {"id":"q3-help","stage":3,"type":"CHOICE","question":"3의 배수와 4의 배수 중에서 처음 만나는 수를 찾아볼까요?","options":[{"value":"12","label":"12","nextNodeId":"q4","concept":"공통으로 나타나는 가장 작은 배수가 최소공배수예요."},{"value":"UNKNOWN","label":"잘 모르겠어요","nextNodeId":"q4","errorType":"최소공배수 이해 부족","example":"3의 배수: 3, 6, 9, 12 / 4의 배수: 4, 8, 12"}],"example":"3과 4의 배수를 나열하면 12에서 처음 만나요."},
+      {"id":"q4","stage":2,"type":"NUMBER","question":"1/3의 분모를 12로 만들려면 분자와 분모에 몇을 곱해야 하나요?","options":[{"value":"4","label":"4","nextNodeId":"q5"},{"value":"UNKNOWN","label":"잘 모르겠어요","nextNodeId":"q4-help","errorType":"동치분수 이해 부족"},{"value":"WRONG","label":"다른 수","nextNodeId":"q4-help","errorType":"동치분수 이해 부족"}]},
+      {"id":"q4-help","stage":3,"type":"CHOICE","question":"3에 몇을 곱하면 12가 될까요? 분자에도 같은 수를 곱해야 해요.","options":[{"value":"4","label":"4","nextNodeId":"q5","concept":"분자와 분모에 같은 수를 곱하면 동치분수가 돼요."},{"value":"UNKNOWN","label":"잘 모르겠어요","nextNodeId":"q5","errorType":"동치분수 이해 부족","concept":"3×4=12인지 확인해 보세요."}],"example":"1/3은 분자와 분모에 4를 곱해 4/12로 바꿀 수 있어요."},
+      {"id":"q5","stage":2,"type":"NUMBER","question":"통분한 두 분수의 분자를 더해 보세요.","options":[{"value":"7","label":"7","nextNodeId":"retry"},{"value":"UNKNOWN","label":"잘 모르겠어요","nextNodeId":"retry","errorType":"분자 계산 확인 필요"},{"value":"WRONG","label":"다른 수","nextNodeId":"retry","errorType":"분자 계산 실수"}]}
+    ]
+  }
+]

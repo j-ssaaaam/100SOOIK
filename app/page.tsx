@@ -1,181 +1,259 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { DiagnosticNode, LearningRecord, Question, Student, TeacherDashboard } from "../lib/bakjumsu-types";
 
-type Mood = {
-  id: string;
-  emoji: string;
-  label: string;
-  helper: string;
-  color: string;
+type View = "landing" | "pin" | "password" | "student" | "teacher-login" | "teacher";
+type StudentTab = "home" | "questions" | "notebook" | "progress" | "password";
+type ChatMessage = { role: "assistant" | "student"; text: string };
+
+const statusLabels: Record<LearningRecord["status"], string> = {
+  NOT_STARTED: "시작 전",
+  DIAGNOSING: "진단 중",
+  CONCEPT_HELP: "개념 도움 중",
+  RETRYING: "재풀이 중",
+  COMPLETED: "100점 완료",
+  TEACHER_HELP_NEEDED: "교사 도움 필요",
 };
 
-type CheckIn = {
-  date: string;
-  moodId: string;
-  note: string;
+const statusClass: Record<LearningRecord["status"], string> = {
+  NOT_STARTED: "status-gray",
+  DIAGNOSING: "status-yellow",
+  CONCEPT_HELP: "status-yellow",
+  RETRYING: "status-orange",
+  COMPLETED: "status-green",
+  TEACHER_HELP_NEEDED: "status-red",
 };
 
-const moods: Mood[] = [
-  { id: "bright", emoji: "☀️", label: "아주 좋아요", helper: "에너지가 가득해요", color: "#D9F66F" },
-  { id: "okay", emoji: "🌿", label: "괜찮아요", helper: "차분하게 시작해요", color: "#D9F0E3" },
-  { id: "heavy", emoji: "🌧️", label: "조금 무거워요", helper: "마음이 천천히 움직여요", color: "#DDD5FF" },
-  { id: "help", emoji: "🫧", label: "도움이 필요해요", helper: "누군가와 이야기하고 싶어요", color: "#FFC8B8" },
-];
+const json = async <T,>(url: string, init?: RequestInit): Promise<T> => {
+  const response = await fetch(url, { ...init, headers: { "content-type": "application/json", ...(init?.headers ?? {}) } });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.message ?? "요청을 처리하지 못했습니다.");
+  return payload as T;
+};
 
-const seedHistory: CheckIn[] = [
-  { date: "2026-07-24", moodId: "okay", note: "친구랑 쉬는 시간에 많이 웃었다." },
-  { date: "2026-07-23", moodId: "bright", note: "발표를 끝내서 마음이 후련했다." },
-  { date: "2026-07-22", moodId: "heavy", note: "잠을 조금 못 자서 피곤했다." },
-  { date: "2026-07-21", moodId: "bright", note: "기다리던 체육 시간이 있었다." },
-];
-
-function getDateKey(date = new Date()) {
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
-  return local.toISOString().slice(0, 10);
-}
-
-function formatLongDate(date = new Date()) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    month: "long",
-    day: "numeric",
-    weekday: "long",
-  }).format(date);
-}
-
-function formatShortDate(dateKey: string) {
-  return new Intl.DateTimeFormat("ko-KR", { month: "numeric", day: "numeric" }).format(
-    new Date(`${dateKey}T12:00:00`),
-  );
-}
+const formatDate = (value: string | null) => value ? new Intl.DateTimeFormat("ko-KR", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value)) : "기록 없음";
 
 export default function Home() {
-  const today = getDateKey();
-  const [selectedMood, setSelectedMood] = useState("bright");
-  const [note, setNote] = useState("");
-  const [saved, setSaved] = useState(false);
-  const [history, setHistory] = useState<CheckIn[]>(seedHistory);
+  const [view, setView] = useState<View>("landing");
+  const [studentTab, setStudentTab] = useState<StudentTab>("home");
+  const [className, setClassName] = useState("6학년 2반");
+  const [students, setStudents] = useState<Array<{ id: string; studentNumber: number }>>([]);
+  const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
+  const [pin, setPin] = useState("");
+  const [passwordAgain, setPasswordAgain] = useState("");
+  const [notice, setNotice] = useState("");
+  const [student, setStudent] = useState<Student | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [records, setRecords] = useState<LearningRecord[]>([]);
+  const [selectedQuestionId, setSelectedQuestionId] = useState("");
+  const [activeRecord, setActiveRecord] = useState<LearningRecord | null>(null);
+  const [activeConcept, setActiveConcept] = useState("");
+  const [activeExample, setActiveExample] = useState("");
+  const [retryAnswer, setRetryAnswer] = useState("");
+  const [retryResult, setRetryResult] = useState<"correct" | "wrong" | null>(null);
+  const [teacherPassword, setTeacherPassword] = useState("");
+  const [teacherDashboard, setTeacherDashboard] = useState<TeacherDashboard | null>(null);
+  const [diagnosticStartedAt, setDiagnosticStartedAt] = useState<number>(() => Date.now());
 
   useEffect(() => {
-    const stored = window.localStorage.getItem("moodlog-checkins");
-    if (!stored) return;
-    try {
-      const parsed = JSON.parse(stored) as CheckIn[];
-      const todayEntry = parsed.find((entry) => entry.date === today);
-      if (todayEntry) {
-        setSelectedMood(todayEntry.moodId);
-        setNote(todayEntry.note);
-        setSaved(true);
-      }
-      setHistory(parsed);
-    } catch {
-      window.localStorage.removeItem("moodlog-checkins");
-    }
-  }, [today]);
+    json<{ class: { name: string }; students: Array<{ id: string; studentNumber: number }> }>("/api/public")
+      .then((payload) => { setClassName(payload.class.name); setStudents(payload.students); })
+      .catch((error: Error) => setNotice(error.message));
+  }, []);
 
-  const recentDays = useMemo(() => {
-    return Array.from({ length: 5 }, (_, index) => {
-      const date = new Date();
-      date.setDate(date.getDate() - (4 - index));
-      const key = getDateKey(date);
-      return {
-        key,
-        label: index === 4 ? "오늘" : new Intl.DateTimeFormat("ko-KR", { weekday: "short" }).format(date),
-        entry: history.find((item) => item.date === key),
-      };
-    });
-  }, [history]);
+  const currentQuestion = useMemo(() => questions.find((question) => question.id === activeRecord?.questionId) ?? null, [questions, activeRecord]);
+  const currentNode = useMemo<DiagnosticNode | null>(() => currentQuestion?.diagnosticNodes.find((node) => node.id === activeRecord?.currentDiagnosticNodeId) ?? null, [currentQuestion, activeRecord]);
+  const completedRecords = records.filter((record) => record.isCompleted);
+  const needsHelpRecords = records.filter((record) => record.needsTeacherHelp);
+  const activeRecords = records.filter((record) => !record.isCompleted);
 
-  const selected = moods.find((mood) => mood.id === selectedMood) ?? moods[0];
-  const completedCount = recentDays.filter((day) => day.entry).length + (saved && !recentDays.some((day) => day.key === today) ? 1 : 0);
-  const saveCheckIn = () => {
-    const nextHistory = [{ date: today, moodId: selectedMood, note }, ...history.filter((entry) => entry.date !== today)];
-    setHistory(nextHistory);
-    window.localStorage.setItem("moodlog-checkins", JSON.stringify(nextHistory));
-    setSaved(true);
+  const loadLearning = async () => {
+    const payload = await json<{ questions: Question[]; records: LearningRecord[] }>("/api/learning");
+    setQuestions(payload.questions);
+    setRecords(payload.records);
   };
 
-  return (
-    <main className="site-shell">
-      <nav className="topbar" aria-label="주요 메뉴">
-        <a className="brand" href="#top" aria-label="마음로그 홈">
-          <span className="brand-mark" aria-hidden="true">✳</span>
-          <span>마음로그</span>
-        </a>
-        <div className="nav-links">
-          <a href="#checkin">오늘 기록</a>
-          <a href="#history">나의 흐름</a>
-        </div>
-        <div className="nav-meta">
-          <span className="mini-status"><span className="status-dot" /> 나만 보기</span>
-          <button className="round-button" aria-label="도움말">?</button>
-        </div>
-      </nav>
+  const chooseStudent = (number: number) => {
+    setSelectedNumber(number);
+    setPin("");
+    setNotice("");
+    setView("pin");
+  };
 
-      <div className="announcement"><span>매일 아침, 1분</span><span>내 마음을 알아가는 시간</span><span>✦</span></div>
+  const studentLogin = async () => {
+    if (selectedNumber === null || pin.length !== 3) return setNotice("3자리 비밀번호를 입력해 주세요.");
+    try {
+      const payload = await json<{ student: Student }>("/api/auth/student-login", { method: "POST", body: JSON.stringify({ studentNumber: selectedNumber, pin }) });
+      setStudent(payload.student);
+      setPin("");
+      setNotice("");
+      if (payload.student.mustChangePassword) setView("password");
+      else { await loadLearning(); setStudentTab("home"); setView("student"); }
+    } catch (error) { setNotice((error as Error).message); setPin(""); }
+  };
 
-      <div className="content" id="top">
-        <section className="intro-grid">
-          <div className="intro-copy">
-            <p className="eyebrow">GOOD MORNING / {formatLongDate()}</p>
-            <h1>오늘 마음은<br /><span>어떤 색</span>인가요?</h1>
-            <p className="intro-text">등교 전 잠깐 멈추고, 지금 내 마음을 살펴봐요.<br />정답은 없어요. 느끼는 그대로면 충분해요.</p>
-            <div className="intro-note"><span className="sparkle">✦</span><span>기록은 이 기기에만 안전하게 저장돼요.</span></div>
-          </div>
+  const changePassword = async () => {
+    if (pin.length !== 3 || passwordAgain.length !== 3) return setNotice("새 비밀번호를 3자리 숫자로 입력해 주세요.");
+    try {
+      const payload = await json<{ student: Student }>("/api/auth/change-password", { method: "POST", body: JSON.stringify({ pin, confirmation: passwordAgain }) });
+      setStudent(payload.student);
+      setPin(""); setPasswordAgain(""); setNotice("");
+      await loadLearning();
+      setStudentTab("home"); setView("student");
+    } catch (error) { setNotice((error as Error).message); }
+  };
 
-          <div className="morning-card">
-            <div className="sun-orbit" aria-hidden="true"><span>☀</span></div>
-            <div className="morning-card-top"><span className="eyebrow">YOUR MORNING CHECK-IN</span><span className="card-date">{formatLongDate()}</span></div>
-            <div className="card-question">지금 내 마음에<br />가장 가까운 걸 골라주세요.</div>
-            <div className="progress-line"><span /><span /><span /><span /></div>
-            <div className="tiny-caption">01 / 01 · 감정 선택</div>
-          </div>
-        </section>
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setView("landing"); setStudent(null); setTeacherDashboard(null); setActiveRecord(null); setRecords([]); setQuestions([]); setSelectedNumber(null); setPin(""); setNotice("");
+  };
 
-        <section className="checkin-section" id="checkin">
-          <div className="section-heading"><div><p className="eyebrow">STEP 01 · CHECK IN</p><h2>지금, 나는</h2></div><span className="section-count">1 / 2</span></div>
-          <div className="mood-grid" role="radiogroup" aria-label="오늘의 감정 선택">
-            {moods.map((mood) => (
-              <button
-                className={`mood-option ${selectedMood === mood.id ? "is-selected" : ""}`}
-                key={mood.id}
-                style={{ "--mood-color": mood.color } as React.CSSProperties}
-                onClick={() => { setSelectedMood(mood.id); setSaved(false); }}
-                role="radio"
-                aria-checked={selectedMood === mood.id}
-              >
-                <span className="mood-emoji" aria-hidden="true">{mood.emoji}</span>
-                <span className="mood-label">{mood.label}</span>
-                <span className="mood-helper">{mood.helper}</span>
-                <span className="select-mark" aria-hidden="true">{selectedMood === mood.id ? "✓" : ""}</span>
-              </button>
-            ))}
-          </div>
-        </section>
+  const startQuestion = async () => {
+    if (!selectedQuestionId) return setNotice("문항을 먼저 선택해 주세요.");
+    try {
+      const payload = await json<{ record: LearningRecord }>("/api/learning", { method: "POST", body: JSON.stringify({ action: "start", questionId: selectedQuestionId }) });
+      setActiveRecord(payload.record); setRetryResult(null); setRetryAnswer(""); setActiveConcept(""); setActiveExample(""); setDiagnosticStartedAt(Date.now()); setStudentTab("questions"); setNotice("");
+      await loadLearning();
+    } catch (error) { setNotice((error as Error).message); }
+  };
 
-        <section className="note-block" aria-labelledby="note-title">
-          <div className="note-copy"><p className="eyebrow">STEP 02 · ONE LINE</p><h2 id="note-title">왜 그런 마음이<br />들었을까요?</h2><p>짧게 적어도 좋아요. 오늘의 나에게<br />건네는 한 문장이 될 거예요.</p></div>
-          <div className="note-form">
-            <div className="chosen-mood" style={{ backgroundColor: selected.color }}><span>{selected.emoji}</span><div><strong>{selected.label}</strong><small>{selected.helper}</small></div></div>
-            <label className="sr-only" htmlFor="daily-note">오늘의 한 줄 기록</label>
-            <textarea id="daily-note" value={note} onChange={(event) => { setNote(event.target.value); setSaved(false); }} placeholder="예: 오늘은 친구를 만나서 기분이 좋아졌다." maxLength={120} />
-            <div className="form-bottom"><span>{note.length} / 120</span><button className="primary-button" onClick={saveCheckIn}>{saved ? "오늘 기록 완료 ✓" : "오늘 기록 저장하기"}</button></div>
-          </div>
-        </section>
+  const answerDiagnostic = async (answer: string) => {
+    if (!activeRecord) return;
+    try {
+      const payload = await json<{ record: LearningRecord; nextNodeId: string | null; concept: string | null; example: string | null }>("/api/learning", { method: "POST", body: JSON.stringify({ action: "response", recordId: activeRecord.id, answer, responseTimeMs: Date.now() - diagnosticStartedAt }) });
+      setActiveRecord(payload.record);
+      setActiveConcept(payload.concept ?? ""); setActiveExample(payload.example ?? ""); setDiagnosticStartedAt(Date.now());
+      if (payload.nextNodeId === "retry") { setRetryResult(null); setRetryAnswer(""); }
+      await loadLearning();
+    } catch (error) { setNotice((error as Error).message); }
+  };
 
-        <section className="history-section" id="history">
-          <div className="history-heading"><div><p className="eyebrow">YOUR WEEK IN FEELINGS</p><h2>이번 주 마음 날씨</h2></div><div className="streak"><span>✦</span><strong>{completedCount}일</strong><small>기록했어요</small></div></div>
-          <div className="week-row">
-            {recentDays.map((day) => {
-              const mood = day.entry ? moods.find((item) => item.id === day.entry?.moodId) : null;
-              return <div className={`day-card ${day.key === today ? "today" : ""}`} key={day.key}><span className="day-label">{day.label}</span><span className="day-emoji" style={{ backgroundColor: mood?.color ?? "#F3F1EC" }}>{mood?.emoji ?? "·"}</span><span className="day-date">{formatShortDate(day.key)}</span></div>;
-            })}
-          </div>
-          <div className="history-footer"><p><span className="footer-spark">✦</span> 마음은 매일 달라질 수 있어요. 달라지는 나를 그대로 기록해 보세요.</p><button className="text-button" onClick={() => document.getElementById("checkin")?.scrollIntoView({ behavior: "smooth" })}>오늘 기록하러 가기 ↗</button></div>
-        </section>
+  const submitRetry = async () => {
+    if (!activeRecord || !retryAnswer.trim()) return setNotice("답을 입력해 주세요.");
+    try {
+      const payload = await json<{ record: LearningRecord; correct: boolean }>("/api/learning", { method: "POST", body: JSON.stringify({ action: "retry", recordId: activeRecord.id, answer: retryAnswer }) });
+      setActiveRecord(payload.record); setRetryResult(payload.correct ? "correct" : "wrong");
+      await loadLearning();
+    } catch (error) { setNotice((error as Error).message); }
+  };
+
+  const requestTeacherHelp = async () => {
+    if (!activeRecord) return;
+    const payload = await json<{ record: LearningRecord }>("/api/learning", { method: "POST", body: JSON.stringify({ action: "help", recordId: activeRecord.id }) });
+    setActiveRecord(payload.record); await loadLearning(); setNotice("선생님께 도움 요청을 보냈어요.");
+  };
+
+  const teacherLogin = async () => {
+    try {
+      await json("/api/auth/teacher-login", { method: "POST", body: JSON.stringify({ password: teacherPassword }) });
+      const payload = await json<{ dashboard: TeacherDashboard }>("/api/teacher");
+      setTeacherDashboard(payload.dashboard); setTeacherPassword(""); setNotice(""); setView("teacher");
+    } catch (error) { setNotice((error as Error).message); }
+  };
+
+  const resetPassword = async (studentNumber: number) => {
+    if (!window.confirm(`${studentNumber}번 학생의 비밀번호를 000으로 초기화할까요?\n다음 접속 시 새 비밀번호를 설정해야 합니다.`)) return;
+    await json("/api/teacher", { method: "POST", body: JSON.stringify({ action: "reset-password", studentNumber }) });
+    const payload = await json<{ dashboard: TeacherDashboard }>("/api/teacher");
+    setTeacherDashboard(payload.dashboard); setNotice(`${studentNumber}번 학생의 비밀번호를 초기화했습니다.`);
+  };
+
+  const selectNumber = (number: string) => {
+    if (pin.length < 3) setPin((value) => value + number);
+  };
+
+  const renderPinPad = (title: string, onSubmit: () => void, second = false) => (
+    <section className="auth-card">
+      <p className="eyebrow">안전한 입장</p>
+      <h1>{title}</h1>
+      <p className="auth-help">비밀번호는 화면에 표시되지 않고 ●로 보여요.</p>
+      <div className="pin-dots" aria-label="입력한 비밀번호">{[0, 1, 2].map((index) => <span key={index} className={pin[index] ? "filled" : ""}>●</span>)}</div>
+      <div className="keypad" aria-label="숫자 키패드">
+        {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((number) => <button key={number} onClick={() => selectNumber(number)}>{number}</button>)}
+        <button className="keypad-muted" onClick={() => setPin("")}>전체 지우기</button>
+        <button onClick={() => selectNumber("0")}>0</button>
+        <button className="keypad-muted" onClick={() => setPin((value) => value.slice(0, -1))}>한 자리 지우기</button>
       </div>
+      {notice && <p className="notice error">{notice}</p>}
+      <button className="button primary full" onClick={onSubmit}>{second ? "변경 완료" : "입장하기"}</button>
+      <button className="button text full" onClick={() => { setPin(""); setNotice(""); setView("landing"); }}>다른 번호 선택하기</button>
+    </section>
+  );
 
-      <footer className="footer"><span>마음로그</span><span>나를 알아가는 가장 작은 습관</span><span>© 2026 MOODLOG</span></footer>
+  if (view === "landing") return (
+    <main className="app-shell landing-shell">
+      <header className="brand-header"><div className="brand-mark">100</div><div><strong>백점수익</strong><span>틀린 문제를 다시, 내 힘으로</span></div></header>
+      <section className="landing-card">
+        <div className="landing-copy"><p className="eyebrow">6학년 2반 · 개인 완성학습</p><h1>나의 번호를<br /><span>선택하세요.</span></h1><p>틀린 문항을 차근차근 다시 풀고,<br />내가 막힌 부분을 찾아봐요.</p></div>
+        <div className="class-box"><div className="class-box-top"><span>학급</span><strong>{className}</strong></div><div className="student-grid">{students.map((item) => <button className="student-number" key={item.id} onClick={() => chooseStudent(item.studentNumber)}>{item.studentNumber}<small>번</small></button>)}</div></div>
+      </section>
+      <button className="teacher-entry" onClick={() => { setNotice(""); setView("teacher-login"); }}>교사 입장</button>
+      <footer className="landing-footer"><span>백점수익</span><span>정답보다 과정을 소중하게</span></footer>
     </main>
   );
+
+  if (view === "pin" && selectedNumber !== null) return <main className="app-shell auth-shell"><header className="brand-header"><div className="brand-mark">100</div><strong>백점수익</strong></header>{renderPinPad(`${selectedNumber}번 학생이 맞나요?`, studentLogin)}</main>;
+
+  if (view === "password") return <main className="app-shell auth-shell"><header className="brand-header"><div className="brand-mark">100</div><strong>백점수익</strong></header><section className="auth-card password-card"><p className="eyebrow">첫 입장 준비</p><h1>새 비밀번호를<br />정해 주세요.</h1><p className="auth-help">000은 초기화 전용입니다. 000이 아닌 3자리 숫자를 만들어 주세요.</p><label>새 3자리 비밀번호<input inputMode="numeric" type="password" maxLength={3} value={pin} onChange={(event) => setPin(event.target.value.replace(/\D/g, "").slice(0, 3))} /></label><label>새 비밀번호 다시 입력<input inputMode="numeric" type="password" maxLength={3} value={passwordAgain} onChange={(event) => setPasswordAgain(event.target.value.replace(/\D/g, "").slice(0, 3))} /></label>{notice && <p className="notice error">{notice}</p>}<button className="button primary full" onClick={changePassword}>변경 완료</button></section></main>;
+
+  if (view === "teacher-login") return <main className="app-shell auth-shell"><header className="brand-header"><div className="brand-mark">100</div><strong>백점수익</strong></header><section className="auth-card password-card"><p className="eyebrow">교사 전용</p><h1>학급 현황을<br />확인합니다.</h1><p className="auth-help">교사 비밀번호를 입력해 주세요.</p><label>교사 비밀번호<input type="password" value={teacherPassword} onChange={(event) => setTeacherPassword(event.target.value)} onKeyDown={(event) => event.key === "Enter" && teacherLogin()} /></label>{notice && <p className="notice error">{notice}</p>}<button className="button primary full" onClick={teacherLogin}>교사로 입장하기</button><button className="button text full" onClick={() => { setNotice(""); setView("landing"); }}>학생 화면으로 돌아가기</button></section></main>;
+
+  if (view === "teacher" && teacherDashboard) return <TeacherView dashboard={teacherDashboard} notice={notice} onReset={resetPassword} onLogout={logout} />;
+
+  return <StudentView student={student} tab={studentTab} setTab={setStudentTab} questions={questions} records={records} completedRecords={completedRecords} activeRecords={activeRecords} needsHelpRecords={needsHelpRecords} selectedQuestionId={selectedQuestionId} setSelectedQuestionId={setSelectedQuestionId} onStart={startQuestion} activeRecord={activeRecord} setActiveRecord={setActiveRecord} currentQuestion={currentQuestion} currentNode={currentNode} activeConcept={activeConcept} activeExample={activeExample} answerDiagnostic={answerDiagnostic} retryAnswer={retryAnswer} setRetryAnswer={setRetryAnswer} retryResult={retryResult} submitRetry={submitRetry} requestTeacherHelp={requestTeacherHelp} notice={notice} onLogout={logout} passwordPin={pin} setPasswordPin={setPin} passwordAgain={passwordAgain} setPasswordAgain={setPasswordAgain} onChangePassword={changePassword} />;
 }
+
+function StudentView(props: {
+  student: Student | null; tab: StudentTab; setTab: (tab: StudentTab) => void; questions: Question[]; records: LearningRecord[]; completedRecords: LearningRecord[]; activeRecords: LearningRecord[]; needsHelpRecords: LearningRecord[]; selectedQuestionId: string; setSelectedQuestionId: (value: string) => void; onStart: () => void; activeRecord: LearningRecord | null; setActiveRecord: (record: LearningRecord | null) => void; currentQuestion: Question | null; currentNode: DiagnosticNode | null; activeConcept: string; activeExample: string; answerDiagnostic: (answer: string) => void; retryAnswer: string; setRetryAnswer: (value: string) => void; retryResult: "correct" | "wrong" | null; submitRetry: () => void; requestTeacherHelp: () => void; notice: string; onLogout: () => void; passwordPin: string; setPasswordPin: (value: string) => void; passwordAgain: string; setPasswordAgain: (value: string) => void; onChangePassword: () => void;
+}) {
+  const { student, tab, setTab, questions, records, completedRecords, activeRecords, needsHelpRecords, selectedQuestionId, setSelectedQuestionId, onStart, activeRecord, setActiveRecord, currentQuestion, currentNode, activeConcept, activeExample, answerDiagnostic, retryAnswer, setRetryAnswer, retryResult, submitRetry, requestTeacherHelp, notice, onLogout, passwordPin, setPasswordPin, passwordAgain, setPasswordAgain, onChangePassword } = props;
+  const [grade, setGrade] = useState("5");
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const filteredQuestions = questions.filter((question) => String(question.grade) === grade);
+  const isRetry = activeRecord?.status === "RETRYING" || currentNode?.id === "retry";
+  const currentStatus = activeRecord ? statusLabels[activeRecord.status] : "";
+
+  const handleChatAnswer = (value: string, label: string) => {
+    setChatMessages((messages) => [...messages, ...(currentNode ? [{ role: "assistant" as const, text: currentNode.question }] : []), { role: "student", text: label }]);
+    answerDiagnostic(value);
+  };
+
+  const chatTranscript = useMemo(() => {
+    if (!activeRecord || !currentNode) return [];
+    const messages = chatMessages.length ? chatMessages : [];
+    const last = messages[messages.length - 1];
+    return last?.role === "assistant" && last.text === currentNode.question ? messages : [...messages, { role: "assistant" as const, text: currentNode.question }];
+  }, [activeRecord, currentNode, chatMessages]);
+
+  const questionCard = currentQuestion && <div className="problem-card"><div className="problem-meta"><span>{currentQuestion.grade}학년 · {currentQuestion.unit}</span><span>{currentQuestion.lesson} · {currentQuestion.questionNumber}번</span></div><p>{currentQuestion.questionText}</p></div>;
+
+  const progressNav = (next: StudentTab) => { setTab(next); setActiveRecord(null); setChatMessages([]); };
+
+  return <main className="app-shell student-shell">
+    <header className="student-header"><button className="brand-inline" onClick={() => progressNav("home")}><span className="brand-mark">100</span><strong>백점수익</strong></button><div className="student-header-info"><span>{student?.studentNumber}번 학생</span><button onClick={onLogout}>로그아웃</button></div></header>
+    <div className="student-layout"><aside className="side-nav" aria-label="학생 메뉴"><button className={tab === "home" ? "active" : ""} onClick={() => progressNav("home")}>홈</button><button className={tab === "questions" ? "active" : ""} onClick={() => progressNav("questions")}>틀린 문항 선택</button><button className={tab === "notebook" ? "active" : ""} onClick={() => progressNav("notebook")}>나의 오답노트</button><button className={tab === "progress" ? "active" : ""} onClick={() => progressNav("progress")}>나의 진도</button><button className={tab === "password" ? "active" : ""} onClick={() => progressNav("password")}>비밀번호 변경</button></aside>
+      <section className="student-content">
+        {notice && <div className="notice info">{notice}</div>}
+        {tab === "home" && <><div className="page-heading"><p className="eyebrow">MY COMPLETE LEARNING</p><h1>{student?.studentNumber}번님의<br /><span>백점수익</span></h1><p>오늘도 한 문제씩, 내가 막힌 곳을 찾아 끝까지 완성해요.</p></div><div className="stat-grid"><StatCard label="100점 완료" value={completedRecords.length} tone="green" /><StatCard label="재풀이할 문제" value={activeRecords.length} tone="orange" /><StatCard label="선생님 도움 필요" value={needsHelpRecords.length} tone="red" /></div><div className="home-grid"><div className="panel continue-panel"><div className="panel-title"><div><p className="eyebrow">TODAY</p><h2>오늘 이어서 풀기</h2></div><span className="panel-icon">→</span></div>{activeRecords[0] ? <><p className="muted">{questions.find((question) => question.id === activeRecords[0].questionId)?.unit}</p><h3>{questions.find((question) => question.id === activeRecords[0].questionId)?.questionText}</h3><button className="button primary" onClick={() => { setActiveRecord(activeRecords[0]); setTab("questions"); }}>이어서 풀기</button></> : <><p className="empty-text">지금은 진행 중인 문제가 없어요.</p><button className="button secondary" onClick={() => setTab("questions")}>문제 고르기</button></>}</div><div className="panel concept-panel"><div className="panel-title"><div><p className="eyebrow">MY NOTE</p><h2>최근 오답노트</h2></div><span className="panel-icon green-dot">●</span></div>{records.slice(-3).reverse().map((record) => <div className="mini-record" key={record.id}><span className={`status-dot ${statusClass[record.status]}`} /><div><strong>{questions.find((question) => question.id === record.questionId)?.unit}</strong><small>{statusLabels[record.status]}</small></div></div>)}{records.length === 0 && <p className="empty-text">문제를 시작하면 여기에 기록돼요.</p>}</div></div></>}
+
+        {tab === "questions" && <div className="study-area">{!activeRecord ? <><div className="page-heading compact"><p className="eyebrow">STEP 01 · CHOOSE A QUESTION</p><h1>틀린 문항을<br /><span>선택해요.</span></h1><p>학년과 단원을 고른 뒤, 다시 풀 문제를 선택해 주세요.</p></div><div className="selector-panel panel"><label>학년<select value={grade} onChange={(event) => { setGrade(event.target.value); setSelectedQuestionId(""); }}><option value="5">5학년</option><option value="6">6학년</option></select></label><label>단원<select value={selectedQuestionId} onChange={(event) => setSelectedQuestionId(event.target.value)}><option value="">문항을 선택하세요</option>{filteredQuestions.map((question) => <option key={question.id} value={question.id}>{question.unit} · {question.lesson} · {question.questionNumber}번{!question.isPlayable ? " (준비 중)" : ""}</option>)}</select></label>{selectedQuestionId && <div className="selected-preview">{questions.find((question) => question.id === selectedQuestionId)?.questionText}<small>쪽수와 문항 번호는 문제를 시작하면 확인할 수 있어요.</small></div>}<button className="button primary" disabled={!selectedQuestionId || !questions.find((question) => question.id === selectedQuestionId)?.isPlayable} onClick={onStart}>도움 시작하기</button>{selectedQuestionId && !questions.find((question) => question.id === selectedQuestionId)?.isPlayable && <p className="notice info">이 샘플 문항은 다음 버전에서 진단 흐름을 연결할 예정이에요.</p>}</div></> : <><div className="study-top"><button className="back-link" onClick={() => { setActiveRecord(null); setChatMessages([]); }}>← 문항 목록으로</button><span className={`status-badge ${statusClass[activeRecord.status]}`}>{currentStatus}</span></div>{questionCard}<div className="stage-bar"><span className="stage-current">{isRetry ? "4단계" : `${currentNode?.stage ?? 1}단계`}</span><div><b className={!isRetry ? "on" : ""}>생각할 부분</b><b className={activeRecord.status === "CONCEPT_HELP" ? "on" : ""}>핵심 개념</b><b className={activeExample ? "on" : ""}>유사 예시</b><b className={isRetry ? "on" : ""}>원래 문제 재도전</b></div></div>{retryResult === "correct" ? <CompleteCard record={activeRecord} question={currentQuestion} onDone={() => { setActiveRecord(null); setChatMessages([]); }} /> : isRetry ? <div className="diagnostic-panel panel retry-panel chatbot-panel"><p className="eyebrow">STEP 04 · TRY AGAIN</p><div className="chat-history" role="log" aria-live="polite">{chatTranscript.map((message, index) => <div className={`chat-message ${message.role}`} key={`${message.role}-${index}`}><span className="chat-avatar">{message.role === "assistant" ? "도움" : "나"}</span><p>{message.text}</p></div>)}<div className="chat-message assistant"><span className="chat-avatar">도움</span><p>이제 원래 문제를 다시 풀어 볼까요? 정답을 바로 알려주지 않고, 스스로 생각할 수 있게 기다릴게요.</p></div></div>{activeConcept && <div className="hint-box"><strong>확인한 개념</strong><p>{activeConcept}</p></div>}{activeExample && <div className="example-box"><strong>쉬운 예시</strong><p>{activeExample}</p></div>}<p className="retry-problem">{currentQuestion?.questionText}</p><input className="answer-input" value={retryAnswer} onChange={(event) => setRetryAnswer(event.target.value)} placeholder="답을 입력해 주세요" onKeyDown={(event) => event.key === "Enter" && submitRetry()} />{retryResult === "wrong" && <p className="notice error">아직 조금 더 확인해 보면 좋아요. 정답을 바로 알려주지 않고 다시 생각할 수 있게 도와줄게요.</p>}<button className="button primary" onClick={submitRetry}>답 보내기</button><button className="button text" onClick={requestTeacherHelp}>선생님께 도움 요청하기</button></div> : <div className="diagnostic-panel panel chatbot-panel"><p className="eyebrow">STEP {currentNode?.stage ?? 1} · CHAT WITH YOUR TUTOR</p><div className="chat-header"><span className="chat-avatar assistant-avatar">도움</span><div><strong>백점 도우미</strong><small>한 번에 하나씩 같이 생각해요.</small></div></div><div className="chat-history" role="log" aria-live="polite">{(chatTranscript.length ? chatTranscript : [{ role: "assistant", text: currentNode?.question ?? "어디에서 막혔는지 같이 찾아볼까요?" }]).map((message, index) => <div className={`chat-message ${message.role}`} key={`${message.role}-${index}`}><span className="chat-avatar">{message.role === "assistant" ? "도움" : "나"}</span><p>{message.text}</p></div>)}{activeConcept && <div className="chat-message assistant"><span className="chat-avatar">도움</span><p>이 개념을 확인해 보면 좋아요.<br /><strong>{activeConcept}</strong></p></div>}{activeExample && <div className="chat-message assistant example-message"><span className="chat-avatar">예시</span><p>{activeExample}</p></div>}</div><div className="chat-composer"><p>아래에서 지금 생각나는 답을 골라 주세요.</p><div className="answer-options chat-options">{(currentNode?.options ?? []).map((option) => <button key={option.value} onClick={() => handleChatAnswer(option.value, option.label)}>{option.label}</button>)}</div></div><div className="study-actions"><button onClick={() => { setActiveRecord(null); setChatMessages([]); }}>처음부터 다시 시작</button><button onClick={requestTeacherHelp}>선생님께 도움 요청</button></div><p className="concept-trail">지금까지 확인한 핵심 개념: {activeRecord.providedConcepts.length ? activeRecord.providedConcepts.join(" · ") : "아직 없어요"}</p></div>}</>}
+        </div>}
+
+        {tab === "notebook" && <><div className="page-heading compact"><p className="eyebrow">MY WRONG ANSWER NOTE</p><h1>나의<br /><span>오답노트</span></h1><p>도움을 받은 문제는 자동으로 여기에 기록돼요.</p></div><div className="record-list">{records.length === 0 ? <div className="empty-card">아직 오답노트가 비어 있어요. 틀린 문항을 하나 골라 시작해 보세요.</div> : records.map((record) => <RecordCard key={record.id} record={record} question={questions.find((question) => question.id === record.questionId)} />)}</div></>}
+
+        {tab === "progress" && <><div className="page-heading compact"><p className="eyebrow">MY PROGRESS</p><h1>나의<br /><span>완성 현황</span></h1><p>다른 친구와 비교하지 않고, 어제의 나와 비교해요.</p></div><div className="progress-board panel"><div className="progress-summary"><strong>{completedRecords.length}</strong><span>/ {questions.filter((question) => question.isPlayable).length} 문항 100점 완료</span></div>{questions.map((question) => { const record = records.find((item) => item.questionId === question.id); return <div className="progress-row" key={question.id}><div><strong>{question.unit}</strong><small>{question.lesson} · {question.questionNumber}번</small></div><span className={`status-badge ${record ? statusClass[record.status] : "status-gray"}`}>{record ? statusLabels[record.status] : "시작 전"}</span></div>; })}</div></>}
+
+        {tab === "password" && <div className="password-inline panel"><p className="eyebrow">ACCOUNT</p><h2>비밀번호 변경</h2><p>새로운 3자리 숫자를 입력해 주세요. 000은 사용할 수 없어요.</p><label>새 비밀번호<input inputMode="numeric" type="password" maxLength={3} value={passwordPin} onChange={(event) => setPasswordPin(event.target.value.replace(/\D/g, "").slice(0, 3))} /></label><label>새 비밀번호 다시 입력<input inputMode="numeric" type="password" maxLength={3} value={passwordAgain} onChange={(event) => setPasswordAgain(event.target.value.replace(/\D/g, "").slice(0, 3))} /></label><button className="button primary" onClick={onChangePassword}>변경 완료</button></div>}
+      </section>
+    </div>
+  </main>;
+}
+
+function StatCard({ label, value, tone }: { label: string; value: number; tone: string }) { return <div className={`stat-card ${tone}`}><span>{label}</span><strong>{value}</strong><small>문항</small></div>; }
+
+function RecordCard({ record, question }: { record: LearningRecord; question?: Question }) { return <article className="record-card"><div className="record-card-top"><span className={`status-badge ${statusClass[record.status]}`}>{statusLabels[record.status]}</span><span>{formatDate(record.updatedAt)}</span></div><h3>{question?.questionText}</h3><p>{question?.grade}학년 · {question?.unit} · {question?.lesson}</p>{record.diagnosedErrorTypes.length > 0 && <div className="tag-row">{record.diagnosedErrorTypes.map((error) => <span key={error}>{error}</span>)}</div>}<div className="record-details"><span>확인한 개념 {record.providedConcepts.length}개</span><span>재풀이 {record.retryCount}회</span></div></article>; }
+
+function CompleteCard({ record, question, onDone }: { record: LearningRecord; question: Question | null; onDone: () => void }) { return <div className="complete-card"><div className="complete-mark">✓</div><p className="eyebrow">COMPLETE</p><h2>100점 완료!</h2><p>{question?.unit}의 {question?.questionNumber}번 문항을 스스로 해결했어요.</p><div className="completion-summary"><div><span>처음 막혔던 부분</span><strong>{record.diagnosedErrorTypes[0] ?? "천천히 생각해 보기"}</strong></div><div><span>확인한 핵심 개념</span><strong>{record.providedConcepts.length || question?.concepts.length || 0}개</strong></div></div><p className="complete-note">이 문제는 나의 오답노트에 저장되었어요.</p><button className="button primary" onClick={onDone}>오답노트로 돌아가기</button></div>; }
+
+function TeacherView({ dashboard, notice, onReset, onLogout }: { dashboard: TeacherDashboard; notice: string; onReset: (studentNumber: number) => void; onLogout: () => void }) { return <main className="app-shell teacher-shell"><header className="student-header"><div className="brand-inline"><span className="brand-mark">100</span><strong>백점수익 <em>교사</em></strong></div><div className="student-header-info"><span>김선생님</span><button onClick={onLogout}>로그아웃</button></div></header><section className="teacher-content"><div className="page-heading"><p className="eyebrow">CLASSROOM DASHBOARD · 6학년 2반</p><h1>우리 반의<br /><span>완성 현황</span></h1><p>학생 한 명 한 명의 막힌 지점과 도움 요청을 확인해 주세요.</p></div>{notice && <div className="notice info">{notice}</div>}<div className="teacher-stat-grid"><StatCard label="전체 학생" value={dashboard.totalStudents} tone="blue" /><StatCard label="오늘 접속" value={dashboard.todayLoginCount} tone="blue" /><StatCard label="100점 완료 학생" value={dashboard.completedStudentCount} tone="green" /><StatCard label="교사 도움 필요" value={dashboard.teacherHelpCount} tone="red" /></div><div className="teacher-panel panel"><div className="panel-title"><div><p className="eyebrow">STUDENT OVERVIEW</p><h2>학생별 현황</h2></div><span className="muted">총 {dashboard.totalStudents}명</span></div><div className="teacher-table-wrap"><table><thead><tr><th>번호</th><th>최근 접속</th><th>최근 문항</th><th>오류 유형</th><th>상태</th><th>완료</th><th>관리</th></tr></thead><tbody>{dashboard.students.map(({ student, currentRecord, completedCount, unresolvedCount, latestError }) => <tr key={student.id}><td><strong>{student.studentNumber}번</strong></td><td>{formatDate(student.lastLoginAt)}</td><td>{currentRecord ? "분수의 덧셈" : "-"}</td><td>{latestError ?? "-"}</td><td><span className={`status-badge ${currentRecord ? statusClass[currentRecord.status] : "status-gray"}`}>{currentRecord ? statusLabels[currentRecord.status] : "시작 전"}</span></td><td>{completedCount} / {completedCount + unresolvedCount}</td><td><button className="small-button" onClick={() => onReset(student.studentNumber)}>비밀번호 000 초기화</button></td></tr>)}</tbody></table></div></div><div className="teacher-lower-grid"><div className="panel insight-panel"><p className="eyebrow">COMMON CONCEPTS</p><h2>이번 주 살펴볼 개념</h2><p>학생들이 문제를 풀며 선택한 오류 유형을 모아 다음 수업에 활용할 수 있어요.</p><div className="insight-bar"><span>통분 개념 부족</span><b style={{ width: "68%" }} /></div><div className="insight-bar"><span>최소공배수 이해 부족</span><b style={{ width: "42%" }} /></div></div><div className="panel insight-panel alert-panel"><p className="eyebrow">NEEDS ATTENTION</p><h2>도움 요청 알림</h2><p>빨간색 상태의 학생에게 먼저 말을 걸어 주세요.</p><strong className="alert-number">{dashboard.teacherHelpCount}<small>명</small></strong></div></div></section></main>; }

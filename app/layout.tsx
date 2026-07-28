@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "마음로그 | 매일 아침 감정일기",
-  description: "등교 전 1분, 지금 내 마음을 기록하는 감정일기.",
+  title: "백점수익 | 틀린 문제를 다시, 내 힘으로",
+  description: "초등학생을 위한 단계적 수학 완성학습 웹앱 백점수익",
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
 };
 
