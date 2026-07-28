@@ -25,16 +25,26 @@ test("renders the 백점수익 landing page", async () => {
 });
 
 test("keeps the first version centered on numbered students and server routes", async () => {
-  const [page, readme, migration] = await Promise.all([
+  const [page, readme, migration, seed] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../README.md", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/001_initial.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/seed/sample-questions.json", import.meta.url), "utf8"),
   ]);
   assert.match(page, /student-grid/);
   assert.match(page, /studentNumber/);
+  assert.match(page, /chatbot-panel/);
+  assert.match(page, /handleChatAnswer/);
   assert.match(readme, /1번~8번/);
   assert.match(readme, /31번~39번/);
   assert.match(migration, /enable row level security/);
   assert.match(migration, /learning_records_owner_read/);
   assert.match(migration, /student_login_roster/);
+  const seededQuestions = JSON.parse(seed);
+  assert.deepEqual(seededQuestions.map((question) => question.id), [
+    "grade5-semester1-fraction-q1",
+    "grade6-semester1-decimal-q1",
+    "grade6-semester1-ratio-q1",
+  ]);
+  assert.ok(seededQuestions.every((question) => question.is_active && question.diagnostic_nodes.length > 0));
 });
