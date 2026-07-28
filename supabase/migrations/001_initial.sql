@@ -154,3 +154,9 @@ from public.students
 where is_active = true;
 
 grant select on public.student_login_roster to anon, authenticated;
+
+-- 시드 스크립트와 서버 관리자 API가 사용하는 service_role 권한입니다.
+grant usage on schema public to service_role;
+grant all privileges on all tables in schema public to service_role;
+grant all privileges on all sequences in schema public to service_role;
+grant select on public.student_login_roster to service_role;
