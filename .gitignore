@@ -29,11 +29,35 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# environment files and secrets
+.env
+.env.*
+.env.local
+!.env.example
+*.secret
+*.secrets
+*.key
+*service_role*
+*service-role*
+*api_key*
+*api-key*
+*secret*
 
 # vercel
 .vercel
+
+# operating-system temporary files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*.tmp
+*.temp
+
+# editor and local development settings
+.idea/
+.vscode/
+*.swp
+*.swo
 
 # typescript
 next-env.d.ts

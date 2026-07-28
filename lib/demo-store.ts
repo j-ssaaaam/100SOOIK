@@ -425,7 +425,8 @@ export const demoStore = {
     return { ok: true as const, token, student };
   },
   loginTeacher(password: string) {
-    const expected = process.env.TEACHER_INITIAL_PASSWORD ?? "teacher";
+    const expected = process.env.TEACHER_INITIAL_PASSWORD;
+    if (!expected) return { ok: false as const, message: "교사 비밀번호가 서버에 설정되지 않았습니다." };
     if (!password || password !== expected) return { ok: false as const, message: "교사 비밀번호를 다시 확인해 주세요." };
     const token = crypto.randomUUID();
     sessions.set(token, { token, kind: "teacher", teacherId: "teacher-1", createdAt: now() });
