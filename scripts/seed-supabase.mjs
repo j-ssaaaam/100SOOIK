@@ -191,99 +191,102 @@ const genericDiagnosticNodes = (prefix, unit = "") => {
 
 const workbookPdfCatalog = [
   { semester: 1, unitNumber: 2, unit: "각기둥과 각뿔", file: "math_ikhim_6-1-2.pdf", pageOffset: 20, lessons: [
-    { name: "단원도입 (수익 21쪽)", pages: [1] },
-    { name: "1. 각기둥을 알아볼까요(1) (수익 22~23쪽)", pages: [2, 3] },
-    { name: "2. 각기둥을 알아볼까요(2) (수익 24~25쪽)", pages: [4, 5] },
-    { name: "3. 각기둥의 전개도를 알아볼까요 (수익 26~29쪽)", pages: [6, 7, 8, 9] },
-    { name: "4. 각뿔을 알아볼까요(1) (수익 30~31쪽)", pages: [10, 11] },
-    { name: "5. 각뿔을 알아볼까요(2) (수익 32~33쪽)", pages: [12, 13] },
+    { name: "단원도입 (수익 21쪽)", pages: [1], questionCounts: [3] },
+    { name: "1. 각기둥을 알아볼까요(1) (수익 22~23쪽)", pages: [2, 3], questionCounts: [2, 3] },
+    { name: "2. 각기둥을 알아볼까요(2) (수익 24~25쪽)", pages: [4, 5], questionCounts: [2, 3] },
+    { name: "3. 각기둥의 전개도를 알아볼까요 (수익 26~29쪽)", pages: [6, 7, 8, 9], questionCounts: [2, 3, 2, 1] },
+    { name: "4. 각뿔을 알아볼까요(1) (수익 30~31쪽)", pages: [10, 11], questionCounts: [2, 3] },
+    { name: "5. 각뿔을 알아볼까요(2) (수익 32~33쪽)", pages: [12, 13], questionCounts: [2, 3] },
   ] },
   { semester: 1, unitNumber: 3, unit: "소수의 나눗셈", file: "math_ikhim_6-1-3.pdf", pageOffset: 34, lessons: [
-    { name: "단원도입 (수익 35쪽)", pages: [1] },
-    { name: "1. (소수)÷(자연수)를 알아볼까요(1) (수익 36~37쪽)", pages: [2, 3] },
-    { name: "2. (소수)÷(자연수)를 알아볼까요(2) (수익 38~39쪽)", pages: [4, 5] },
-    { name: "3. (소수)÷(자연수)를 알아볼까요(3) (수익 40~41쪽)", pages: [6, 7] },
-    { name: "4. (소수)÷(자연수)를 알아볼까요(4) (수익 42~43쪽)", pages: [8, 9] },
-    { name: "5. (소수)÷(자연수)를 알아볼까요(5) (수익 44~45쪽)", pages: [10, 11] },
-    { name: "6. 자연수÷자연수의 몫을 소수로 나타내어 볼까요 (수익 46~47쪽)", pages: [12, 13] },
-    { name: "7. 어림셈한 결과를 이용하여 몫의 소수점 위치를 확인해 볼까요 (수익 48~49쪽)", pages: [14, 15] },
+    { name: "단원도입 (수익 35쪽)", pages: [1], questionCounts: [4] },
+    { name: "1. (소수)÷(자연수)를 알아볼까요(1) (수익 36~37쪽)", pages: [2, 3], questionCounts: [2, 4] },
+    { name: "2. (소수)÷(자연수)를 알아볼까요(2) (수익 38~39쪽)", pages: [4, 5], questionCounts: [2, 4] },
+    { name: "3. (소수)÷(자연수)를 알아볼까요(3) (수익 40~41쪽)", pages: [6, 7], questionCounts: [2, 4] },
+    { name: "4. (소수)÷(자연수)를 알아볼까요(4) (수익 42~43쪽)", pages: [8, 9], questionCounts: [2, 4] },
+    { name: "5. (소수)÷(자연수)를 알아볼까요(5) (수익 44~45쪽)", pages: [10, 11], questionCounts: [2, 4] },
+    { name: "6. 자연수÷자연수의 몫을 소수로 나타내어 볼까요 (수익 46~47쪽)", pages: [12, 13], questionCounts: [2, 4] },
+    { name: "7. 어림셈한 결과를 이용하여 몫의 소수점 위치를 확인해 볼까요 (수익 48~49쪽)", pages: [14, 15], questionCounts: [2, 2] },
   ] },
   { semester: 1, unitNumber: 4, unit: "비와 비율", file: "math_ikhim_6-1-4.pdf", pageOffset: 50, lessons: [
-    { name: "단원도입 (수익 51쪽)", pages: [1] },
-    { name: "1. 두 수를 비교해 볼까요 (수익 52~53쪽)", pages: [2, 3] },
-    { name: "2. 비를 알아볼까요 (수익 54~55쪽)", pages: [4, 5] },
-    { name: "3. 비율을 알아볼까요 (수익 56~57쪽)", pages: [6, 7] },
-    { name: "4. 비율이 사용되는 경우를 알아볼까요 (수익 58~59쪽)", pages: [8, 9] },
-    { name: "5. 백분율을 알아볼까요 (수익 60~61쪽)", pages: [10, 11] },
-    { name: "6. 백분율이 사용되는 경우를 알아볼까요 (수익 62~63쪽)", pages: [12, 13] },
+    { name: "단원도입 (수익 51쪽)", pages: [1], questionCounts: [3] },
+    { name: "1. 두 수를 비교해 볼까요 (수익 52~53쪽)", pages: [2, 3], questionCounts: [3, 3] },
+    { name: "2. 비를 알아볼까요 (수익 54~55쪽)", pages: [4, 5], questionCounts: [2, 3] },
+    { name: "3. 비율을 알아볼까요 (수익 56~57쪽)", pages: [6, 7], questionCounts: [2, 3] },
+    { name: "4. 비율이 사용되는 경우를 알아볼까요 (수익 58~59쪽)", pages: [8, 9], questionCounts: [2, 3] },
+    { name: "5. 백분율을 알아볼까요 (수익 60~61쪽)", pages: [10, 11], questionCounts: [2, 3] },
+    { name: "6. 백분율이 사용되는 경우를 알아볼까요 (수익 62~63쪽)", pages: [12, 13], questionCounts: [2, 3] },
   ] },
   { semester: 1, unitNumber: 5, unit: "여러 가지 그래프", file: "math_ikhim_6-1-5.pdf", pageOffset: 64, lessons: [
-    { name: "단원도입 (수익 65쪽)", pages: [1] },
-    { name: "1. 띠그래프와 원그래프를 알아볼까요 (수익 66~67쪽)", pages: [2, 3] },
-    { name: "2. 띠그래프와 원그래프로 나타내는 방법을 알아볼까요 (수익 68~69쪽)", pages: [4, 5] },
-    { name: "3. 자료를 조사하여 띠그래프와 원그래프로 나타내어 볼까요 (수익 70~71쪽)", pages: [6, 7] },
-    { name: "4. 띠그래프와 원그래프를 해석해 볼까요 (수익 72~73쪽)", pages: [8, 9] },
-    { name: "5. 여러 가지 그래프를 활용해 볼까요 (수익 74~75쪽)", pages: [10, 11] },
+    { name: "단원도입 (수익 65쪽)", pages: [1], questionCounts: [3] },
+    { name: "1. 띠그래프와 원그래프를 알아볼까요 (수익 66~67쪽)", pages: [2, 3], questionCounts: [3, 3] },
+    { name: "2. 띠그래프와 원그래프로 나타내는 방법을 알아볼까요 (수익 68~69쪽)", pages: [4, 5], questionCounts: [2, 2] },
+    { name: "3. 자료를 조사하여 띠그래프와 원그래프로 나타내어 볼까요 (수익 70~71쪽)", pages: [6, 7], questionCounts: [3, 3] },
+    { name: "4. 띠그래프와 원그래프를 해석해 볼까요 (수익 72~73쪽)", pages: [8, 9], questionCounts: [3, 2] },
+    { name: "5. 여러 가지 그래프를 활용해 볼까요 (수익 74~75쪽)", pages: [10, 11], questionCounts: [1, 2] },
   ] },
   { semester: 1, unitNumber: 6, unit: "직육면체의 부피와 겉넓이", file: "math_ikhim_6-1-6.pdf", pageOffset: 76, lessons: [
-    { name: "단원도입 (수익 77쪽)", pages: [1] },
-    { name: "1. 1 cm³를 알아볼까요 (수익 78~79쪽)", pages: [2, 3] },
-    { name: "2. 직육면체의 부피를 구하는 방법을 알아볼까요 (수익 80~81쪽)", pages: [4, 5] },
-    { name: "3. 1 m³를 알아볼까요 (수익 82~83쪽)", pages: [6, 7] },
-    { name: "4. 직육면체의 겉넓이를 구하는 방법을 알아볼까요 (수익 84~85쪽)", pages: [8, 9] },
+    { name: "단원도입 (수익 77쪽)", pages: [1], questionCounts: [3] },
+    { name: "1. 1 cm³를 알아볼까요 (수익 78~79쪽)", pages: [2, 3], questionCounts: [2, 2] },
+    { name: "2. 직육면체의 부피를 구하는 방법을 알아볼까요 (수익 80~81쪽)", pages: [4, 5], questionCounts: [2, 4] },
+    { name: "3. 1 m³를 알아볼까요 (수익 82~83쪽)", pages: [6, 7], questionCounts: [2, 4] },
+    { name: "4. 직육면체의 겉넓이를 구하는 방법을 알아볼까요 (수익 84~85쪽)", pages: [8, 9], questionCounts: [2, 4] },
   ] },
   { semester: 2, unitNumber: 1, unit: "분수의 나눗셈", file: "math_ikhim_6-2-1.pdf", pageOffset: 8, lessons: [
-    { name: "단원도입 (수익 9쪽)", pages: [1] },
-    { name: "1. 분모가 같은 (분수)÷(분수)를 알아볼까요(1) (수익 10~11쪽)", pages: [2, 3] },
-    { name: "2. 분모가 같은 (분수)÷(분수)를 알아볼까요(2) (수익 12~13쪽)", pages: [4, 5] },
-    { name: "3. 분모가 다른 (분수)÷(분수)를 알아볼까요 (수익 14~15쪽)", pages: [6, 7] },
-    { name: "4. (자연수)÷(분수)를 알아볼까요 (수익 16~17쪽)", pages: [8, 9] },
-    { name: "5. (분수)÷(분수)를 (분수)×(분수)로 나타내어 볼까요 (수익 18~19쪽)", pages: [10, 11] },
-    { name: "6. (분수)÷(분수)를 구해 볼까요 (수익 20~21쪽)", pages: [12, 13] },
+    { name: "단원도입 (수익 9쪽)", pages: [1], questionCounts: [4] },
+    { name: "1. 분모가 같은 (분수)÷(분수)를 알아볼까요(1) (수익 10~11쪽)", pages: [2, 3], questionCounts: [2, 5] },
+    { name: "2. 분모가 같은 (분수)÷(분수)를 알아볼까요(2) (수익 12~13쪽)", pages: [4, 5], questionCounts: [2, 5] },
+    { name: "3. 분모가 다른 (분수)÷(분수)를 알아볼까요 (수익 14~15쪽)", pages: [6, 7], questionCounts: [2, 5] },
+    { name: "4. (자연수)÷(분수)를 알아볼까요 (수익 16~17쪽)", pages: [8, 9], questionCounts: [1, 5] },
+    { name: "5. (분수)÷(분수)를 (분수)×(분수)로 나타내어 볼까요 (수익 18~19쪽)", pages: [10, 11], questionCounts: [1, 5] },
+    { name: "6. (분수)÷(분수)를 구해 볼까요 (수익 20~21쪽)", pages: [12, 13], questionCounts: [2, 5] },
   ] },
   { semester: 2, unitNumber: 2, unit: "소수의 나눗셈", file: "math_ikhim_6-2-2.pdf", pageOffset: 22, lessons: [
-    { name: "단원도입 (수익 23쪽)", pages: [1] },
-    { name: "1. 소수의 나눗셈을 알아볼까요 (수익 24~25쪽)", pages: [2, 3] },
-    { name: "2. (소수)÷(소수)를 알아볼까요(1) (수익 26~27쪽)", pages: [4, 5] },
-    { name: "3. (소수)÷(소수)를 알아볼까요(2) (수익 28~29쪽)", pages: [6, 7] },
-    { name: "4. (자연수)÷(소수)를 알아볼까요 (수익 30~31쪽)", pages: [8, 9] },
-    { name: "5. 몫을 반올림하여 나타내어 볼까요 (수익 32~33쪽)", pages: [10, 11] },
-    { name: "6. 나누어 주고 남는 양을 알아볼까요 (수익 34~35쪽)", pages: [12, 13] },
+    { name: "단원도입 (수익 23쪽)", pages: [1], questionCounts: [4] },
+    { name: "1. 소수의 나눗셈을 알아볼까요 (수익 24~25쪽)", pages: [2, 3], questionCounts: [2, 5] },
+    { name: "2. (소수)÷(소수)를 알아볼까요(1) (수익 26~27쪽)", pages: [4, 5], questionCounts: [2, 5] },
+    { name: "3. (소수)÷(소수)를 알아볼까요(2) (수익 28~29쪽)", pages: [6, 7], questionCounts: [2, 5] },
+    { name: "4. (자연수)÷(소수)를 알아볼까요 (수익 30~31쪽)", pages: [8, 9], questionCounts: [2, 5] },
+    { name: "5. 몫을 반올림하여 나타내어 볼까요 (수익 32~33쪽)", pages: [10, 11], questionCounts: [2, 4] },
+    { name: "6. 나누어 주고 남는 양을 알아볼까요 (수익 34~35쪽)", pages: [12, 13], questionCounts: [2, 2] },
   ] },
   { semester: 2, unitNumber: 3, unit: "공간과 입체", file: "math_ikhim_6-2-3.pdf", pageOffset: 36, lessons: [
-    { name: "단원도입 (수익 37쪽)", pages: [1] },
-    { name: "1. 어느 방향에서 보았을까요 (수익 38~39쪽)", pages: [2, 3] },
-    { name: "2. 쌓은 모양과 쌓기나무의 개수를 알아볼까요(1) (수익 40~41쪽)", pages: [4, 5] },
-    { name: "3. 쌓은 모양과 쌓기나무의 개수를 알아볼까요(2) (수익 42~43쪽)", pages: [6, 7] },
-    { name: "4. 쌓은 모양과 쌓기나무의 개수를 알아볼까요(3) (수익 44~45쪽)", pages: [8, 9] },
-    { name: "5. 쌓은 모양과 쌓기나무의 개수를 알아볼까요(4) (수익 46~47쪽)", pages: [10, 11] },
-    { name: "6. 쌓기나무로 여러 가지 모양을 만들어 볼까요 (수익 48~49쪽)", pages: [12, 13] },
+    { name: "단원도입 (수익 37쪽)", pages: [1], questionCounts: [3] },
+    { name: "1. 어느 방향에서 보았을까요 (수익 38~39쪽)", pages: [2, 3], questionCounts: [2, 2] },
+    { name: "2. 쌓은 모양과 쌓기나무의 개수를 알아볼까요(1) (수익 40~41쪽)", pages: [4, 5], questionCounts: [2, 3] },
+    { name: "3. 쌓은 모양과 쌓기나무의 개수를 알아볼까요(2) (수익 42~43쪽)", pages: [6, 7], questionCounts: [2, 3] },
+    { name: "4. 쌓은 모양과 쌓기나무의 개수를 알아볼까요(3) (수익 44~45쪽)", pages: [8, 9], questionCounts: [2, 2] },
+    { name: "5. 쌓은 모양과 쌓기나무의 개수를 알아볼까요(4) (수익 46~47쪽)", pages: [10, 11], questionCounts: [2, 3] },
+    { name: "6. 쌓기나무로 여러 가지 모양을 만들어 볼까요 (수익 48~49쪽)", pages: [12, 13], questionCounts: [3, 2] },
   ] },
   { semester: 2, unitNumber: 4, unit: "비례식과 비례배분", file: "math_ikhim_6-2-4.pdf", pageOffset: 50, lessons: [
-    { name: "단원도입 (수익 51쪽)", pages: [1] },
-    { name: "1. 비의 성질을 알아볼까요 (수익 52~53쪽)", pages: [2, 3] },
-    { name: "2. 간단한 자연수의 비로 나타내어 볼까요 (수익 54~55쪽)", pages: [4, 5] },
-    { name: "3. 비례식을 알아볼까요 (수익 56~57쪽)", pages: [6, 7] },
-    { name: "4. 비례식의 성질을 알아볼까요 (수익 58~59쪽)", pages: [8, 9] },
-    { name: "5. 비례식을 활용해 볼까요 (수익 60~61쪽)", pages: [10, 11] },
-    { name: "6. 비례배분을 해 볼까요 (수익 62~63쪽)", pages: [12, 13] },
+    { name: "단원도입 (수익 51쪽)", pages: [1], questionCounts: [4] },
+    { name: "1. 비의 성질을 알아볼까요 (수익 52~53쪽)", pages: [2, 3], questionCounts: [2, 5] },
+    { name: "2. 간단한 자연수의 비로 나타내어 볼까요 (수익 54~55쪽)", pages: [4, 5], questionCounts: [2, 4] },
+    { name: "3. 비례식을 알아볼까요 (수익 56~57쪽)", pages: [6, 7], questionCounts: [2, 5] },
+    { name: "4. 비례식의 성질을 알아볼까요 (수익 58~59쪽)", pages: [8, 9], questionCounts: [2, 5] },
+    { name: "5. 비례식을 활용해 볼까요 (수익 60~61쪽)", pages: [10, 11], questionCounts: [2, 3] },
+    { name: "6. 비례배분을 해 볼까요 (수익 62~63쪽)", pages: [12, 13], questionCounts: [2, 5] },
   ] },
   { semester: 2, unitNumber: 5, unit: "원의 넓이", file: "math_ikhim_6-2-5.pdf", pageOffset: 64, lessons: [
-    { name: "단원도입 (수익 65쪽)", pages: [1] },
-    { name: "1. 원주와 지름의 관계를 알아볼까요 (수익 66~67쪽)", pages: [2, 3] },
-    { name: "2. 원주율을 알아볼까요 (수익 68~69쪽)", pages: [4, 5] },
-    { name: "3. 원주와 지름을 구해 볼까요 (수익 70~71쪽)", pages: [6, 7] },
-    { name: "4. 원의 넓이를 어림해 볼까요 (수익 72~73쪽)", pages: [8, 9] },
-    { name: "5. 원의 넓이를 구하는 방법을 알아볼까요 (수익 74~75쪽)", pages: [10, 11] },
-    { name: "6. 원의 넓이를 활용해 볼까요 (수익 76~77쪽)", pages: [12, 13] },
+    { name: "단원도입 (수익 65쪽)", pages: [1], questionCounts: [4] },
+    { name: "1. 원주와 지름의 관계를 알아볼까요 (수익 66~67쪽)", pages: [2, 3], questionCounts: [2, 3] },
+    { name: "2. 원주율을 알아볼까요 (수익 68~69쪽)", pages: [4, 5], questionCounts: [2, 3] },
+    { name: "3. 원주와 지름을 구해 볼까요 (수익 70~71쪽)", pages: [6, 7], questionCounts: [2, 4] },
+    { name: "4. 원의 넓이를 어림해 볼까요 (수익 72~73쪽)", pages: [8, 9], questionCounts: [1, 3] },
+    { name: "5. 원의 넓이를 구하는 방법을 알아볼까요 (수익 74~75쪽)", pages: [10, 11], questionCounts: [1, 4] },
+    { name: "6. 원의 넓이를 활용해 볼까요 (수익 76~77쪽)", pages: [12, 13], questionCounts: [2, 5] },
   ] },
 ];
 
-const workbookPdfQuestions = workbookPdfCatalog.flatMap((catalog) => catalog.lessons.flatMap((lesson) => lesson.pages.flatMap((pdfPage) => Array.from({ length: 6 }, (_, questionIndex) => {
-  const questionNumber = questionIndex + 1;
-  const prefix = `workbook-${catalog.semester}-${catalog.unitNumber}-p${pdfPage}-q${questionNumber}`;
-  return { id: `grade6-semester${catalog.semester}-unit${catalog.unitNumber}-page${pdfPage}-q${questionNumber}`, grade: 6, semester: catalog.semester, unit: catalog.unit, lesson: lesson.name, page: catalog.pageOffset + pdfPage, question_number: questionNumber, question_text: `${lesson.name} ${questionNumber}번 문제를 PDF에서 확인하고 풀어 보세요.`, question_image_url: `/${catalog.file}#page=${pdfPage}`, correct_answer: "", accepted_answers: ["*"], concepts: [catalog.unit, lesson.name, "문제에서 구하는 것 확인", "계산 결과 확인"], diagnostic_start_id: `${prefix}-q1`, diagnostic_nodes: genericDiagnosticNodes(prefix, catalog.unit), is_active: true };
-}))));
+const workbookPdfQuestions = workbookPdfCatalog.flatMap((catalog) => catalog.lessons.flatMap((lesson, lessonIndex) => {
+  let questionNumber = 0;
+  return lesson.pages.flatMap((pdfPage, pageIndex) => Array.from({ length: lesson.questionCounts[pageIndex] ?? 0 }, () => {
+    questionNumber += 1;
+    const prefix = `workbook-${catalog.semester}-${catalog.unitNumber}-lesson${lessonIndex + 1}-q${questionNumber}`;
+    return { id: `grade6-semester${catalog.semester}-unit${catalog.unitNumber}-lesson${lessonIndex + 1}-q${questionNumber}`, grade: 6, semester: catalog.semester, unit: catalog.unit, lesson: lesson.name, page: catalog.pageOffset + pdfPage, question_number: questionNumber, question_text: `${catalog.unitNumber}단원 ${catalog.unit} ${lesson.name} ${questionNumber}번 문제`, question_image_url: `/${catalog.file}#page=${pdfPage}`, correct_answer: "", accepted_answers: ["*"], concepts: [catalog.unit, lesson.name, "문제에서 구하는 것 확인", "계산 결과 확인"], diagnostic_start_id: `${prefix}-q1`, diagnostic_nodes: genericDiagnosticNodes(prefix, catalog.unit), is_active: true };
+  }));
+}));
 
 
 const pdfQuestions = pdfQuestionCatalog.map(([, pdfPage, questionNumber, questionText, acceptedAnswers]) => {
@@ -294,8 +297,8 @@ const pdfQuestions = pdfQuestionCatalog.map(([, pdfPage, questionNumber, questio
 const sampleQuestions = JSON.parse(await readFile(new URL("../supabase/seed/sample-questions.json", import.meta.url), "utf8")).map((question) => ({ question_image_url: null, ...question }));
 const questions = [...sampleQuestions, ...pdfQuestions, ...workbookPdfQuestions];
 for (const catalog of workbookPdfCatalog) {
-  await rest(`questions?id=like.grade6-semester${catalog.semester}-unit${catalog.unitNumber}-page%25`, { method: "PATCH", body: JSON.stringify({ is_active: false, updated_at: new Date().toISOString() }) });
+  await rest(`questions?id=like.grade6-semester${catalog.semester}-unit${catalog.unitNumber}-%25`, { method: "PATCH", body: JSON.stringify({ is_active: false, updated_at: new Date().toISOString() }) });
 }
-await rest("questions?id=like.grade6-semester2-unit6-page%25", { method: "PATCH", body: JSON.stringify({ is_active: false, updated_at: new Date().toISOString() }) });
+await rest("questions?id=like.grade6-semester2-unit6-%25", { method: "PATCH", body: JSON.stringify({ is_active: false, updated_at: new Date().toISOString() }) });
 await rest("questions", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(questions) });
 console.log(`Supabase seed 완료: 학생 ${numbers.length}명, 교사 1명, 문항 ${questions.length}개`);
