@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   const pin = String(body.pin ?? "");
   if (!Number.isInteger(studentNumber) || !/^\d{3}$/.test(pin)) return Response.json({ message: "학생 번호와 3자리 비밀번호를 확인해 주세요." }, { status: 400 });
   if (isSupabaseConfigured()) {
-    const rows = await supabaseRest(`students?select=id,student_number,name,must_change_password,failed_login_count,locked_until,is_active,last_login_at,auth_email&student_number=eq.${studentNumber}&is_active=eq.true&limit=1`) as Array<{ id: string; student_number: number; name: string; must_change_password: boolean; failed_login_count: number; locked_until: string | null; is_active: boolean; last_login_at: string | null; auth_email: string }>;
+    const rows = await supabaseRest(`students?select=id,student_number,name,must_change_password,failed_login_count,locked_until,is_active,last_login_at,auth_email&student_number=eq.${studentNumber}&is_active=eq.true&limit=1`, { admin: true }) as Array<{ id: string; student_number: number; name: string; must_change_password: boolean; failed_login_count: number; locked_until: string | null; is_active: boolean; last_login_at: string | null; auth_email: string }>;
     const row = rows[0];
     if (!row) return Response.json({ message: "학생 번호를 찾을 수 없습니다." }, { status: 404 });
     if (row.locked_until && new Date(row.locked_until).getTime() > Date.now()) return Response.json({ message: "잠시 입력이 제한되었습니다. 선생님께 도움을 요청해 주세요.", locked: true }, { status: 401 });
