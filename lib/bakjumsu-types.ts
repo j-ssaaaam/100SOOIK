@@ -6,7 +6,7 @@ export type StudentStatus =
   | "COMPLETED"
   | "TEACHER_HELP_NEEDED";
 
-export type DiagnosticNodeType = "YES_NO_UNKNOWN" | "CHOICE" | "NUMBER";
+export type DiagnosticNodeType = "YES_NO_UNKNOWN" | "CHOICE" | "NUMBER" | "SHORT_TEXT";
 
 export type DiagnosticOption = {
   value: string;
@@ -38,6 +38,8 @@ export type Question = {
   page: number;
   questionNumber: number;
   questionText: string;
+  pdfUrl?: string;
+  pdfPage?: number;
   correctAnswer: string;
   acceptedAnswers: string[];
   concepts: string[];

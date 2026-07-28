@@ -475,7 +475,9 @@ export const demoStore = {
     if (!record || record.studentId !== studentId) return null;
     const question = this.getQuestion(record.questionId);
     const node = question?.diagnosticNodes.find((item) => item.id === record.currentDiagnosticNodeId);
-    const option = node?.options?.find((item) => item.value === answer);
+    const normalized = answer.trim().replace(/\s+/g, "").toLowerCase();
+    const aliases: Record<string, string[]> = { YES: ["예", "네", "맞아요"], NO: ["아니요", "아니오", "아니"], UNKNOWN: ["잘모르겠어요", "모르겠어요"] };
+    const option = node?.options?.find((item) => item.value === "*" || [item.value, item.label, ...(aliases[item.value] ?? [])].some((candidate) => candidate.trim().replace(/\s+/g, "").toLowerCase() === normalized));
     const nextNodeId = option?.nextNodeId ?? null;
     if (option?.errorType && !record.diagnosedErrorTypes.includes(option.errorType)) record.diagnosedErrorTypes.push(option.errorType);
     if (option?.concept && !record.providedConcepts.includes(option.concept)) record.providedConcepts.push(option.concept);

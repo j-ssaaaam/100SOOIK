@@ -34,7 +34,10 @@ test("keeps the first version centered on numbered students and server routes", 
   assert.match(page, /student-grid/);
   assert.match(page, /studentNumber/);
   assert.match(page, /chatbot-panel/);
-  assert.match(page, /handleChatAnswer/);
+  assert.match(page, /submitChatInput/);
+  assert.match(page, /selectedQuestionNumber/);
+  assert.match(page, /pdf-preview/);
+  assert.doesNotMatch(page, /answer-options chat-options/);
   assert.match(readme, /1번~8번/);
   assert.match(readme, /31번~39번/);
   assert.match(migration, /enable row level security/);

@@ -5,8 +5,24 @@ import { getCookie, isSupabaseConfigured, supabaseRest, supabaseUser } from "../
 const getSession = (request: Request) => demoStore.getSession(request.headers.get("cookie")?.match(/(?:^|; )bp-session=([^;]+)/)?.[1] ?? null);
 
 const questionFromRow = (row: Record<string, unknown>): Question => ({
-  id: String(row.id), grade: Number(row.grade), semester: Number(row.semester), unit: String(row.unit), lesson: String(row.lesson), page: Number(row.page), questionNumber: Number(row.question_number), questionText: String(row.question_text), correctAnswer: String(row.correct_answer), acceptedAnswers: Array.isArray(row.accepted_answers) ? row.accepted_answers.map(String) : [], concepts: Array.isArray(row.concepts) ? row.concepts.map(String) : [], diagnosticStartId: String(row.diagnostic_start_id), diagnosticNodes: Array.isArray(row.diagnostic_nodes) ? row.diagnostic_nodes as Question["diagnosticNodes"] : [], isPlayable: true,
+  id: String(row.id), grade: Number(row.grade), semester: Number(row.semester), unit: String(row.unit), lesson: String(row.lesson), page: Number(row.page), questionNumber: Number(row.question_number), questionText: String(row.question_text), pdfUrl: row.question_image_url ? String(row.question_image_url) : undefined, pdfPage: row.question_image_url ? Number(String(row.question_image_url).match(/#page=(\d+)/)?.[1] ?? 0) || undefined : undefined, correctAnswer: String(row.correct_answer), acceptedAnswers: Array.isArray(row.accepted_answers) ? row.accepted_answers.map(String) : [], concepts: Array.isArray(row.concepts) ? row.concepts.map(String) : [], diagnosticStartId: String(row.diagnostic_start_id), diagnosticNodes: Array.isArray(row.diagnostic_nodes) ? row.diagnostic_nodes as Question["diagnosticNodes"] : [], isPlayable: true,
 });
+
+const normalizeAnswer = (value: string) => value.trim().replace(/\s+/g, "").toLowerCase();
+const diagnosticOption = (node: Question["diagnosticNodes"][number] | undefined, answer: string) => {
+  if (!node) return undefined;
+  const normalized = normalizeAnswer(answer);
+  const aliases: Record<string, string[]> = {
+    yes: ["예", "네", "맞아요", "맞습니다", "yes"],
+    no: ["아니요", "아니오", "아니", "no"],
+    unknown: ["잘모르겠어요", "모르겠어요", "모르겠습니다", "모르겠어", "unknown"],
+  };
+  return node.options?.find((item) => {
+    if (item.value === "*") return Boolean(normalized);
+    const candidates = [item.value, item.label, ...(aliases[item.value.toLowerCase()] ?? [])];
+    return candidates.some((candidate) => normalizeAnswer(candidate) === normalized);
+  });
+};
 
 const recordFromRow = (row: Record<string, unknown>): LearningRecord => ({
   id: String(row.id), studentId: String(row.student_id), questionId: String(row.question_id), status: row.status as LearningRecord["status"], currentDiagnosticNodeId: String(row.current_diagnostic_node_id), diagnosedErrorTypes: Array.isArray(row.diagnosed_error_types) ? row.diagnosed_error_types.map(String) : [], providedConcepts: Array.isArray(row.provided_concepts) ? row.provided_concepts.map(String) : [], retryCount: Number(row.retry_count ?? 0), retryAnswer: String(row.retry_answer ?? ""), isCompleted: Boolean(row.is_completed), needsTeacherHelp: Boolean(row.needs_teacher_help), startedAt: String(row.started_at), completedAt: row.completed_at ? String(row.completed_at) : null, updatedAt: String(row.updated_at),
@@ -65,14 +81,15 @@ export async function POST(request: Request) {
       const questionRows = await supabaseRest(`questions?select=*&id=eq.${encodeURIComponent(record.questionId)}&limit=1`, { token: session.accessToken }) as Array<Record<string, unknown>>;
       const question = questionRows[0] ? questionFromRow(questionRows[0]) : null;
       const node = question?.diagnosticNodes.find((item) => item.id === record.currentDiagnosticNodeId);
-      const option = node?.options?.find((item) => item.value === String(body.answer));
+      const answer = String(body.answer ?? "");
+      const option = diagnosticOption(node, answer);
       const nextNodeId = option?.nextNodeId ?? null;
       const diagnosedErrorTypes = option?.errorType && !record.diagnosedErrorTypes.includes(option.errorType) ? [...record.diagnosedErrorTypes, option.errorType] : record.diagnosedErrorTypes;
       const providedConcepts = option?.concept && !record.providedConcepts.includes(option.concept) ? [...record.providedConcepts, option.concept] : record.providedConcepts;
       const status = nextNodeId === "retry" ? "RETRYING" : option?.concept ? "CONCEPT_HELP" : "DIAGNOSING";
       const updateRows = await supabaseRest(`learning_records?id=eq.${record.id}&student_id=eq.${session.studentId}`, { method: "PATCH", token: session.accessToken, headers: { Prefer: "return=representation" }, body: JSON.stringify({ status, current_diagnostic_node_id: nextNodeId && nextNodeId !== "retry" ? nextNodeId : record.currentDiagnosticNodeId, diagnosed_error_types: diagnosedErrorTypes, provided_concepts: providedConcepts, needs_teacher_help: Boolean(option?.needsTeacherHelp), updated_at: new Date().toISOString() }) }) as Array<Record<string, unknown>>;
-      await supabaseRest("diagnostic_responses", { method: "POST", token: session.accessToken, body: JSON.stringify({ learning_record_id: record.id, student_id: session.studentId, question_id: record.questionId, diagnostic_node_id: node?.id ?? record.currentDiagnosticNodeId, question_text: node?.question ?? "", answer: String(body.answer ?? ""), next_node_id: nextNodeId, diagnosed_error_type: option?.errorType ?? null, response_time_ms: Number(body.responseTimeMs ?? 0) }) });
-      return Response.json({ record: recordFromRow(updateRows[0]), nextNodeId, concept: option?.concept ?? node?.concept ?? null, example: option?.example ?? node?.example ?? null, errorType: option?.errorType ?? null });
+      await supabaseRest("diagnostic_responses", { method: "POST", token: session.accessToken, body: JSON.stringify({ learning_record_id: record.id, student_id: session.studentId, question_id: record.questionId, diagnostic_node_id: node?.id ?? record.currentDiagnosticNodeId, question_text: node?.question ?? "", answer, next_node_id: nextNodeId, diagnosed_error_type: option?.errorType ?? null, response_time_ms: Number(body.responseTimeMs ?? 0) }) });
+      return Response.json({ record: recordFromRow(updateRows[0]), nextNodeId, concept: option?.concept ?? node?.concept ?? null, example: option?.example ?? node?.example ?? null, errorType: option?.errorType ?? null, matched: Boolean(option), feedback: option ? null : "답을 조금 더 구체적으로 적어 보세요. 잘 모르겠다면 ‘잘 모르겠어요’라고 적어도 괜찮아요." });
     }
     if (action === "retry") {
       const recordRows = await supabaseRest(`learning_records?select=*&id=eq.${body.recordId}&student_id=eq.${session.studentId}&limit=1`, { token: session.accessToken }) as Array<Record<string, unknown>>;
@@ -82,7 +99,7 @@ export async function POST(request: Request) {
       const question = questionRows[0] ? questionFromRow(questionRows[0]) : null;
       const answer = String(body.answer ?? "");
       const normalized = answer.trim().replace(/\s/g, "").toLowerCase();
-      const correct = question?.acceptedAnswers.some((item) => item.replace(/\s/g, "").toLowerCase() === normalized) ?? false;
+      const correct = question?.acceptedAnswers.includes("*") ? Boolean(normalized) : question?.acceptedAnswers.some((item) => item.replace(/\s/g, "").toLowerCase() === normalized) ?? false;
       const retryCount = record.retryCount + 1;
       const status = correct ? "COMPLETED" : retryCount >= 2 ? "TEACHER_HELP_NEEDED" : "RETRYING";
       const updateRows = await supabaseRest(`learning_records?id=eq.${record.id}&student_id=eq.${session.studentId}`, { method: "PATCH", token: session.accessToken, headers: { Prefer: "return=representation" }, body: JSON.stringify({ retry_count: retryCount, retry_answer: answer, status, is_completed: correct, needs_teacher_help: !correct && retryCount >= 2, completed_at: correct ? new Date().toISOString() : null, updated_at: new Date().toISOString() }) }) as Array<Record<string, unknown>>;
