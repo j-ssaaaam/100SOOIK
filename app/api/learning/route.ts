@@ -19,6 +19,7 @@ const diagnosticOption = (node: Question["diagnosticNodes"][number] | undefined,
   };
   return node.options?.find((item) => {
     if (item.value === "*") return Boolean(normalized);
+    if (item.keywords?.some((keyword) => normalized.includes(normalizeAnswer(keyword)))) return true;
     const candidates = [item.value, item.label, ...(aliases[item.value.toLowerCase()] ?? [])];
     return candidates.some((candidate) => normalizeAnswer(candidate) === normalized);
   });
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
       const status = nextNodeId === "retry" ? "RETRYING" : option?.concept ? "CONCEPT_HELP" : "DIAGNOSING";
       const updateRows = await supabaseRest(`learning_records?id=eq.${record.id}&student_id=eq.${session.studentId}`, { method: "PATCH", token: session.accessToken, headers: { Prefer: "return=representation" }, body: JSON.stringify({ status, current_diagnostic_node_id: nextNodeId && nextNodeId !== "retry" ? nextNodeId : record.currentDiagnosticNodeId, diagnosed_error_types: diagnosedErrorTypes, provided_concepts: providedConcepts, needs_teacher_help: Boolean(option?.needsTeacherHelp), updated_at: new Date().toISOString() }) }) as Array<Record<string, unknown>>;
       await supabaseRest("diagnostic_responses", { method: "POST", token: session.accessToken, body: JSON.stringify({ learning_record_id: record.id, student_id: session.studentId, question_id: record.questionId, diagnostic_node_id: node?.id ?? record.currentDiagnosticNodeId, question_text: node?.question ?? "", answer, next_node_id: nextNodeId, diagnosed_error_type: option?.errorType ?? null, response_time_ms: Number(body.responseTimeMs ?? 0) }) });
-      return Response.json({ record: recordFromRow(updateRows[0]), nextNodeId, concept: option?.concept ?? node?.concept ?? null, example: option?.example ?? node?.example ?? null, errorType: option?.errorType ?? null, matched: Boolean(option), feedback: option ? null : "답을 조금 더 구체적으로 적어 보세요. 잘 모르겠다면 ‘잘 모르겠어요’라고 적어도 괜찮아요." });
+      return Response.json({ record: recordFromRow(updateRows[0]), nextNodeId, concept: option?.concept ?? node?.concept ?? null, example: option?.example ?? node?.example ?? null, errorType: option?.errorType ?? null, matched: Boolean(option), feedback: option?.feedback ?? (option ? null : "답을 조금 더 구체적으로 적어 보세요. 잘 모르겠다면 ‘잘 모르겠어요’라고 적어도 괜찮아요.") });
     }
     if (action === "retry") {
       const recordRows = await supabaseRest(`learning_records?select=*&id=eq.${body.recordId}&student_id=eq.${session.studentId}&limit=1`, { token: session.accessToken }) as Array<Record<string, unknown>>;

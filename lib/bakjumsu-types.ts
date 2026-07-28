@@ -15,6 +15,8 @@ export type DiagnosticOption = {
   errorType?: string;
   concept?: string;
   example?: string;
+  keywords?: string[];
+  feedback?: string;
   repeatQuestion?: boolean;
   needsTeacherHelp?: boolean;
 };
