@@ -1,5 +1,5 @@
 import { demoStore } from "../../../lib/demo-store";
-import { getCookie, isSupabaseConfigured, supabaseAdmin, supabaseRest, supabaseUser } from "../../../lib/supabase-rest";
+import { authPasswordForPin, getCookie, isSupabaseConfigured, supabaseAdmin, supabaseRest, supabaseUser } from "../../../lib/supabase-rest";
 
 const isTeacher = (request: Request) => {
   const token = request.headers.get("cookie")?.match(/(?:^|; )bp-session=([^;]+)/)?.[1] ?? null;
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       const rows = await supabaseRest(`students?select=id,student_number&student_number=eq.${Number(body.studentNumber)}&is_active=eq.true&limit=1`, { admin: true }) as Array<{ id: string; student_number: number }>;
       const row = rows[0];
       if (!row) return Response.json({ message: "학생을 찾을 수 없습니다." }, { status: 404 });
-      await supabaseAdmin(`/auth/v1/admin/users/${row.id}`, { method: "PUT", body: JSON.stringify({ password: "000" }) });
+      await supabaseAdmin(`/auth/v1/admin/users/${row.id}`, { method: "PUT", body: JSON.stringify({ password: authPasswordForPin("000") }) });
       await supabaseRest(`students?id=eq.${row.id}`, { method: "PATCH", admin: true, body: JSON.stringify({ must_change_password: true, failed_login_count: 0, locked_until: null, updated_at: new Date().toISOString() }) });
       await supabaseAdmin(`/auth/v1/admin/users/${row.id}/logout`, { method: "POST" }).catch(() => undefined);
       return Response.json({ student: { id: row.id, studentNumber: row.student_number, mustChangePassword: true } });

@@ -5,6 +5,7 @@ const anonKey = () => process.env.SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE
 const serviceRoleKey = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 export const isSupabaseConfigured = () => Boolean(url() && anonKey() && serviceRoleKey());
+export const authPasswordForPin = (pin: string) => `bp-${pin}`;
 
 const authHeaders = (token?: string | null, admin = false) => {
   const key = admin ? serviceRoleKey() : anonKey();

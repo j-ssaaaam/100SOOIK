@@ -1,5 +1,5 @@
 import { demoStore } from "../../../../lib/demo-store";
-import { authCookieHeaders, isSupabaseConfigured, supabasePasswordLogin, supabaseRest } from "../../../../lib/supabase-rest";
+import { authCookieHeaders, authPasswordForPin, isSupabaseConfigured, supabasePasswordLogin, supabaseRest } from "../../../../lib/supabase-rest";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const row = rows[0];
     if (!row) return Response.json({ message: "학생 번호를 찾을 수 없습니다." }, { status: 404 });
     if (row.locked_until && new Date(row.locked_until).getTime() > Date.now()) return Response.json({ message: "잠시 입력이 제한되었습니다. 선생님께 도움을 요청해 주세요.", locked: true }, { status: 401 });
-    const session = await supabasePasswordLogin(row.auth_email, pin);
+    const session = await supabasePasswordLogin(row.auth_email, authPasswordForPin(pin));
     if (!session) {
       const nextFailedCount = row.failed_login_count + 1;
       await supabaseRest(`students?id=eq.${row.id}`, { method: "PATCH", admin: true, body: JSON.stringify({ failed_login_count: nextFailedCount, locked_until: nextFailedCount >= 5 ? new Date(Date.now() + 60_000).toISOString() : null, updated_at: new Date().toISOString() }) });
