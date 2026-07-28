@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root { --blue:#1769e0; --blue-dark:#0b4297; --blue-soft:#eaf2ff; --ink:#172237; --muted:#68758b; --line:#dfe6f0; --paper:#f7faff; --green:#1b9a67; --green-soft:#e8f7ef; --orange:#d8731d; --orange-soft:#fff1e4; --red:#d84949; --red-soft:#ffeded; --yellow:#c5910b; --yellow-soft:#fff9df; }
+.teacher-lower-grid { display:none !important; }
 * { box-sizing:border-box; }
 html { scroll-behavior:smooth; }
 body { margin:0; background:var(--paper); color:var(--ink); font-family:Inter,Pretendard,"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif; }
