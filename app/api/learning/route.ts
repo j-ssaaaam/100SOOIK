@@ -4,8 +4,24 @@ import { getCookie, isSupabaseConfigured, supabaseRest, supabaseUser } from "../
 
 const getSession = (request: Request) => demoStore.getSession(request.headers.get("cookie")?.match(/(?:^|; )bp-session=([^;]+)/)?.[1] ?? null);
 
+const fractionDivisionLessons = [
+  "자연수÷자연수의 몫을 분수로 나타내어 볼까요 (1)",
+  "자연수÷자연수의 몫을 분수로 나타내어 볼까요 (2)",
+  "분수÷자연수를 알아볼까요",
+  "분수÷자연수를 분수의 곱셈으로 나타내어 볼까요",
+  "대분수÷자연수를 알아볼까요",
+];
+
+const lessonFromRow = (row: Record<string, unknown>) => {
+  const unit = String(row.unit);
+  const imageUrl = String(row.question_image_url ?? "");
+  const pdfPage = Number(imageUrl.match(/math_ikhim_6-1-1\.pdf#page=(\d+)/)?.[1] ?? 0);
+  if (Number(row.semester) === 1 && unit === "분수의 나눗셈" && pdfPage >= 2 && pdfPage <= 11) return fractionDivisionLessons[Math.floor((pdfPage - 2) / 2)];
+  return String(row.lesson);
+};
+
 const questionFromRow = (row: Record<string, unknown>): Question => ({
-  id: String(row.id), grade: Number(row.grade), semester: Number(row.semester), unit: String(row.unit), lesson: String(row.lesson), page: Number(row.page), questionNumber: Number(row.question_number), questionText: String(row.question_text), pdfUrl: row.question_image_url ? String(row.question_image_url) : undefined, pdfPage: row.question_image_url ? Number(String(row.question_image_url).match(/#page=(\d+)/)?.[1] ?? 0) || undefined : undefined, correctAnswer: String(row.correct_answer), acceptedAnswers: Array.isArray(row.accepted_answers) ? row.accepted_answers.map(String) : [], concepts: Array.isArray(row.concepts) ? row.concepts.map(String) : [], diagnosticStartId: String(row.diagnostic_start_id), diagnosticNodes: Array.isArray(row.diagnostic_nodes) ? row.diagnostic_nodes as Question["diagnosticNodes"] : [], isPlayable: true,
+  id: String(row.id), grade: Number(row.grade), semester: Number(row.semester), unit: String(row.unit), lesson: lessonFromRow(row), page: Number(row.page), questionNumber: Number(row.question_number), questionText: String(row.question_text), pdfUrl: row.question_image_url ? String(row.question_image_url) : undefined, pdfPage: row.question_image_url ? Number(String(row.question_image_url).match(/#page=(\d+)/)?.[1] ?? 0) || undefined : undefined, correctAnswer: String(row.correct_answer), acceptedAnswers: Array.isArray(row.accepted_answers) ? row.accepted_answers.map(String) : [], concepts: Array.isArray(row.concepts) ? row.concepts.map(String) : [], diagnosticStartId: String(row.diagnostic_start_id), diagnosticNodes: Array.isArray(row.diagnostic_nodes) ? row.diagnostic_nodes as Question["diagnosticNodes"] : [], isPlayable: true,
 });
 
 const normalizeAnswer = (value: string) => value.trim().replace(/\s+/g, "").toLowerCase();

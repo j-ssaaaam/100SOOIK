@@ -289,9 +289,9 @@ const workbookPdfQuestions = workbookPdfCatalog.flatMap((catalog) => catalog.les
 }));
 
 
-const pdfQuestions = pdfQuestionCatalog.map(([, pdfPage, questionNumber, questionText, acceptedAnswers]) => {
+const pdfQuestions = pdfQuestionCatalog.map(([lesson, pdfPage, questionNumber, questionText, acceptedAnswers]) => {
   const prefix = `pdf-${questionNumber}-${pdfPage}`;
-  return { id: `grade6-semester1-fraction-division-${pdfPage}-${questionNumber}`, grade: 6, semester: 1, unit: "분수의 나눗셈", lesson: `PDF ${pdfPage}쪽`, page: pdfPage + 8, question_number: questionNumber, question_text: questionText, question_image_url: `/math_ikhim_6-1-1.pdf#page=${pdfPage}`, correct_answer: acceptedAnswers[0] ?? "", accepted_answers: acceptedAnswers, concepts: ["문제에서 구하는 것 확인", "나눗셈의 의미", "분수 계산", "계산 결과 확인"], diagnostic_start_id: `${prefix}-q1`, diagnostic_nodes: genericDiagnosticNodes(prefix, "분수의 나눗셈"), is_active: true };
+  return { id: `grade6-semester1-fraction-division-${pdfPage}-${questionNumber}`, grade: 6, semester: 1, unit: "분수의 나눗셈", lesson, page: pdfPage + 8, question_number: questionNumber, question_text: questionText, question_image_url: `/math_ikhim_6-1-1.pdf#page=${pdfPage}`, correct_answer: acceptedAnswers[0] ?? "", accepted_answers: acceptedAnswers, concepts: ["문제에서 구하는 것 확인", "나눗셈의 의미", "분수 계산", "계산 결과 확인"], diagnostic_start_id: `${prefix}-q1`, diagnostic_nodes: genericDiagnosticNodes(prefix, "분수의 나눗셈"), is_active: true };
 });
 
 const sampleQuestions = JSON.parse(await readFile(new URL("../supabase/seed/sample-questions.json", import.meta.url), "utf8")).map((question) => ({ question_image_url: null, ...question }));
