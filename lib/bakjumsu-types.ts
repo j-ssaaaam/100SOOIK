@@ -109,6 +109,8 @@ export type TeacherDashboard = {
   retryingCount: number;
   teacherHelpCount: number;
   totalHelpRequests: number;
+  lessonCatalog: TeacherProgressLesson[];
+  lessonCompletionsByStudent: Record<string, LessonCompletionMap>;
   students: Array<{
     student: Student;
     currentRecord: LearningRecord | null;
@@ -120,3 +122,9 @@ export type TeacherDashboard = {
 };
 
 export type LessonCompletionMap = Record<string, boolean>;
+
+export type TeacherProgressLesson = {
+  semester: number;
+  unit: string;
+  lesson: string;
+};

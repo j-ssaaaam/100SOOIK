@@ -6,6 +6,7 @@ import type {
   StudentSession,
   TeacherDashboard,
   LessonCompletionMap,
+  TeacherProgressLesson,
 } from "./bakjumsu-types";
 
 const now = () => new Date().toISOString();
@@ -357,6 +358,16 @@ const responses: DiagnosticResponse[] = [];
 const lessonCompletions = new Map<string, LessonCompletionMap>();
 const sessions = new Map<string, StudentSession>();
 
+const lessonCatalogFromQuestions = (questions: Question[]): TeacherProgressLesson[] => {
+  const seen = new Set<string>();
+  return questions.filter((question) => question.grade === 6 && question.isPlayable).filter((question) => {
+    const key = `${question.semester}|${question.unit}|${question.lesson}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).map((question) => ({ semester: question.semester, unit: question.unit, lesson: question.lesson }));
+};
+
 const hashPin = async (pin: string) => {
   const bytes = new TextEncoder().encode(`백점수익:${pin}`);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -565,6 +576,8 @@ export const demoStore = {
       retryingCount: dashboardStudents.filter((item) => item.currentRecord?.status === "RETRYING").length,
       teacherHelpCount: dashboardStudents.filter((item) => item.currentRecord?.needsTeacherHelp).length,
       totalHelpRequests: dashboardStudents.reduce((sum, item) => sum + (item.currentRecord?.needsTeacherHelp ? 1 : 0), 0),
+      lessonCatalog: lessonCatalogFromQuestions(sampleQuestions),
+      lessonCompletionsByStudent: Object.fromEntries(this.listStudents().map((student) => [student.id, this.getLessonCompletions(student.id)])),
       students: dashboardStudents,
     };
   },
