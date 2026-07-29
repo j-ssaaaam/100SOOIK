@@ -1,27 +1,12 @@
 import { demoStore } from "../../../lib/demo-store";
 import type { DiagnosticResponse, LearningRecord, Question } from "../../../lib/bakjumsu-types";
+import { normalizeLessonName } from "../../../lib/lesson-catalog";
 import { getCookie, isSupabaseConfigured, supabaseRest, supabaseUpdateUserData, supabaseUser } from "../../../lib/supabase-rest";
 
 const getSession = (request: Request) => demoStore.getSession(request.headers.get("cookie")?.match(/(?:^|; )bp-session=([^;]+)/)?.[1] ?? null);
 
-const fractionDivisionLessons = [
-  "자연수÷자연수의 몫을 분수로 나타내어 볼까요 (1)",
-  "자연수÷자연수의 몫을 분수로 나타내어 볼까요 (2)",
-  "분수÷자연수를 알아볼까요",
-  "분수÷자연수를 분수의 곱셈으로 나타내어 볼까요",
-  "대분수÷자연수를 알아볼까요",
-];
-
-const lessonFromRow = (row: Record<string, unknown>) => {
-  const unit = String(row.unit);
-  const imageUrl = String(row.question_image_url ?? "");
-  const pdfPage = Number(imageUrl.match(/math_ikhim_6-1-1\.pdf#page=(\d+)/)?.[1] ?? 0);
-  if (Number(row.semester) === 1 && unit === "분수의 나눗셈" && pdfPage >= 2 && pdfPage <= 11) return fractionDivisionLessons[Math.floor((pdfPage - 2) / 2)];
-  return String(row.lesson);
-};
-
 const questionFromRow = (row: Record<string, unknown>): Question => ({
-  id: String(row.id), grade: Number(row.grade), semester: Number(row.semester), unit: String(row.unit), lesson: lessonFromRow(row), page: Number(row.page), questionNumber: Number(row.question_number), questionText: String(row.question_text), pdfUrl: row.question_image_url ? String(row.question_image_url) : undefined, pdfPage: row.question_image_url ? Number(String(row.question_image_url).match(/#page=(\d+)/)?.[1] ?? 0) || undefined : undefined, correctAnswer: String(row.correct_answer), acceptedAnswers: Array.isArray(row.accepted_answers) ? row.accepted_answers.map(String) : [], concepts: Array.isArray(row.concepts) ? row.concepts.map(String) : [], diagnosticStartId: String(row.diagnostic_start_id), diagnosticNodes: Array.isArray(row.diagnostic_nodes) ? row.diagnostic_nodes as Question["diagnosticNodes"] : [], isPlayable: true,
+  id: String(row.id), grade: Number(row.grade), semester: Number(row.semester), unit: String(row.unit), lesson: normalizeLessonName(row), page: Number(row.page), questionNumber: Number(row.question_number), questionText: String(row.question_text), pdfUrl: row.question_image_url ? String(row.question_image_url) : undefined, pdfPage: row.question_image_url ? Number(String(row.question_image_url).match(/#page=(\d+)/)?.[1] ?? 0) || undefined : undefined, correctAnswer: String(row.correct_answer), acceptedAnswers: Array.isArray(row.accepted_answers) ? row.accepted_answers.map(String) : [], concepts: Array.isArray(row.concepts) ? row.concepts.map(String) : [], diagnosticStartId: String(row.diagnostic_start_id), diagnosticNodes: Array.isArray(row.diagnostic_nodes) ? row.diagnostic_nodes as Question["diagnosticNodes"] : [], isPlayable: true,
 });
 
 const normalizeAnswer = (value: string) => value.trim().replace(/\s+/g, "").toLowerCase();
@@ -128,6 +113,10 @@ export async function POST(request: Request) {
       const updateRows = await supabaseRest(`learning_records?id=eq.${record.id}&student_id=eq.${session.studentId}`, { method: "PATCH", token: session.accessToken, headers: { Prefer: "return=representation" }, body: JSON.stringify({ status: "RETRYING", current_diagnostic_node_id: "offline-challenge", needs_teacher_help: false, updated_at: new Date().toISOString() }) }) as Array<Record<string, unknown>>;
       return Response.json({ record: recordFromRow(updateRows[0]) });
     }
+    if (action === "offline-complete") {
+      const updateRows = await supabaseRest(`learning_records?id=eq.${body.recordId}&student_id=eq.${session.studentId}`, { method: "PATCH", token: session.accessToken, headers: { Prefer: "return=representation" }, body: JSON.stringify({ status: "COMPLETED", is_completed: true, needs_teacher_help: false, completed_at: new Date().toISOString(), updated_at: new Date().toISOString() }) }) as Array<Record<string, unknown>>;
+      return updateRows[0] ? Response.json({ record: recordFromRow(updateRows[0]) }) : Response.json({ message: "학습 기록을 찾을 수 없습니다." }, { status: 404 });
+    }
     if (action === "retry") {
       const recordRows = await supabaseRest(`learning_records?select=*&id=eq.${body.recordId}&student_id=eq.${session.studentId}&limit=1`, { token: session.accessToken }) as Array<Record<string, unknown>>;
       const record = recordRows[0] ? recordFromRow(recordRows[0]) : null;
@@ -166,6 +155,10 @@ export async function POST(request: Request) {
   }
   if (action === "ready-retry") {
     const record = demoStore.markReadyToRetry(session.studentId, String(body.recordId ?? ""));
+    return record ? Response.json({ record }) : Response.json({ message: "학습 기록을 찾을 수 없습니다." }, { status: 404 });
+  }
+  if (action === "offline-complete") {
+    const record = demoStore.completeOfflineChallenge(session.studentId, String(body.recordId ?? ""));
     return record ? Response.json({ record }) : Response.json({ message: "학습 기록을 찾을 수 없습니다." }, { status: 404 });
   }
   if (action === "retry") {

@@ -520,6 +520,16 @@ export const demoStore = {
     record.updatedAt = now();
     return record;
   },
+  completeOfflineChallenge(studentId: string, recordId: string) {
+    const record = records.get(recordId);
+    if (!record || record.studentId !== studentId) return null;
+    record.status = "COMPLETED";
+    record.isCompleted = true;
+    record.needsTeacherHelp = false;
+    record.completedAt = now();
+    record.updatedAt = now();
+    return record;
+  },
   submitRetry(studentId: string, recordId: string, answer: string) {
     const record = records.get(recordId);
     if (!record || record.studentId !== studentId) return null;

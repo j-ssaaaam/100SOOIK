@@ -126,6 +126,6 @@ input:focus,select:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(2
 .challenge-card { max-width:700px; margin:24px auto 0; text-align:center; }
 .challenge-card h1 { margin:10px 0 18px; color:var(--blue-dark); font-size:clamp(34px,5vw,52px); letter-spacing:-.08em; }
 .challenge-card p:not(.eyebrow) { color:var(--muted); line-height:1.75; }
-.challenge-card .study-actions { flex-wrap:wrap; margin-top:28px; }
-.challenge-card .button.text { margin-top:12px; }
+.challenge-card .challenge-actions { flex-wrap:wrap; margin-top:28px; gap:10px; }
+.challenge-actions .button { min-width:170px; }
 @media (max-width:600px) { .progress-filters { grid-template-columns:1fr; gap:8px; } }

@@ -1,5 +1,6 @@
 import { demoStore } from "../../../lib/demo-store";
 import type { LessonCompletionMap, TeacherProgressLesson } from "../../../lib/bakjumsu-types";
+import { normalizeLessonName } from "../../../lib/lesson-catalog";
 import { authPasswordForPin, getCookie, isSupabaseConfigured, supabaseAdmin, supabaseRest, supabaseUser } from "../../../lib/supabase-rest";
 
 const isTeacher = (request: Request) => {
@@ -15,22 +16,6 @@ const supabaseTeacher = async (request: Request) => {
   return rows[0] ? { accessToken, teacherId: user.id } : null;
 };
 
-const fractionDivisionLessons = [
-  "자연수÷자연수의 몫을 분수로 나타내어 볼까요(1)",
-  "자연수÷자연수의 몫을 분수로 나타내어 볼까요(2)",
-  "분수÷자연수를 알아볼까요",
-  "분수÷자연수를 분수의 곱셈으로 나타내어 볼까요",
-  "대분수÷자연수를 알아볼까요",
-];
-
-const lessonFromRow = (row: Record<string, unknown>) => {
-  const unit = String(row.unit ?? "");
-  const imageUrl = String(row.question_image_url ?? "");
-  const pdfPage = Number(imageUrl.match(/math_ikhim_6-1-1\.pdf#page=(\d+)/)?.[1] ?? 0);
-  if (Number(row.semester) === 1 && unit === "분수의 나눗셈" && pdfPage >= 2 && pdfPage <= 11) return fractionDivisionLessons[Math.floor((pdfPage - 2) / 2)];
-  return String(row.lesson ?? "");
-};
-
 const lessonCatalogFromRows = (rows: Array<Record<string, unknown>>): TeacherProgressLesson[] => {
   const seen = new Set<string>();
   const catalog: TeacherProgressLesson[] = [];
@@ -38,7 +23,7 @@ const lessonCatalogFromRows = (rows: Array<Record<string, unknown>>): TeacherPro
     if (Number(row.grade) !== 6 || row.is_active === false) return;
     const semester = Number(row.semester);
     const unit = String(row.unit ?? "");
-    const lesson = lessonFromRow(row);
+    const lesson = normalizeLessonName(row);
     if (!semester || !unit || !lesson) return;
     const key = `${semester}|${unit}|${lesson}`;
     if (seen.has(key)) return;
