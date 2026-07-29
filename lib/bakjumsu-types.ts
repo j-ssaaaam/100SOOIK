@@ -76,6 +76,7 @@ export type LearningRecord = {
   startedAt: string;
   completedAt: string | null;
   updatedAt: string;
+  diagnosticResponses?: DiagnosticResponse[];
 };
 
 export type DiagnosticResponse = {
