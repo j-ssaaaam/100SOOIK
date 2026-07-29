@@ -1,6 +1,6 @@
 import { demoStore } from "../../../lib/demo-store";
 import type { LessonCompletionMap, TeacherProgressLesson } from "../../../lib/bakjumsu-types";
-import { normalizeLessonName } from "../../../lib/lesson-catalog";
+import { canonicalLessonNames, normalizeLessonName } from "../../../lib/lesson-catalog";
 import { authPasswordForPin, getCookie, isSupabaseConfigured, supabaseAdmin, supabaseRest, supabaseUser } from "../../../lib/supabase-rest";
 
 const isTeacher = (request: Request) => {
@@ -17,18 +17,26 @@ const supabaseTeacher = async (request: Request) => {
 };
 
 const lessonCatalogFromRows = (rows: Array<Record<string, unknown>>): TeacherProgressLesson[] => {
-  const seen = new Set<string>();
   const catalog: TeacherProgressLesson[] = [];
+  const pairs = new Map<string, { semester: number; unit: string }>();
   rows.forEach((row) => {
     if (Number(row.grade) !== 6 || row.is_active === false) return;
     const semester = Number(row.semester);
     const unit = String(row.unit ?? "");
-    const lesson = normalizeLessonName(row);
-    if (!semester || !unit || !lesson) return;
-    const key = `${semester}|${unit}|${lesson}`;
-    if (seen.has(key)) return;
-    seen.add(key);
-    catalog.push({ semester, unit, lesson });
+    if (semester && unit) pairs.set(`${semester}|${unit}`, { semester, unit });
+  });
+  pairs.forEach(({ semester, unit }) => {
+    const canonical = canonicalLessonNames(semester, unit);
+    if (canonical.length) canonical.forEach((lesson) => catalog.push({ semester, unit, lesson }));
+    else {
+      const seen = new Set<string>();
+      rows.filter((row) => Number(row.semester) === semester && String(row.unit ?? "") === unit).forEach((row) => {
+        const lesson = normalizeLessonName(row);
+        if (!lesson || seen.has(lesson)) return;
+        seen.add(lesson);
+        catalog.push({ semester, unit, lesson });
+      });
+    }
   });
   return catalog;
 };

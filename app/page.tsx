@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { DiagnosticNode, LearningRecord, LessonCompletionMap, Question, Student, TeacherDashboard } from "../lib/bakjumsu-types";
+import { canonicalLessonNames } from "../lib/lesson-catalog";
 
 type View = "landing" | "pin" | "password" | "student" | "teacher-login" | "teacher";
 type StudentTab = "home" | "questions" | "notebook" | "progress" | "password";
@@ -267,7 +268,11 @@ function StudentView(props: {
   const progressUnitOrder = progressSemester === "1" ? ["분수의 나눗셈", "각기둥과 각뿔", "소수의 나눗셈", "비와 비율", "여러 가지 그래프", "직육면체의 부피와 겉넓이"] : progressSemester === "2" ? ["분수의 나눗셈", "소수의 나눗셈", "공간과 입체", "비례식과 비례배분", "원의 넓이"] : [];
   const progressQuestions = useMemo(() => progressSemester && progressUnit ? questions.filter((question) => question.grade === 6 && String(question.semester) === progressSemester && question.unit === progressUnit && question.isPlayable) : [], [questions, progressSemester, progressUnit]);
   const progressUnits = progressUnitOrder;
-  const progressLessons = useMemo(() => [...new Set(progressQuestions.map((question) => question.lesson))], [progressQuestions]);
+  const progressLessons = useMemo(() => {
+    const canonical = canonicalLessonNames(Number(progressSemester), progressUnit);
+    if (canonical.length) return canonical;
+    return [...new Set(progressQuestions.map((question) => question.lesson))];
+  }, [progressQuestions, progressSemester, progressUnit]);
   const lessons = [...new Set(semesterQuestions.filter((question) => question.unit === selectedUnit).map((question) => question.lesson))];
   const selectedCatalogQuestion = semesterQuestions.find((question) => question.unit === selectedUnit && question.lesson === selectedLesson && String(question.questionNumber) === selectedQuestionNumber) ?? null;
   const isRetry = activeRecord?.status === "RETRYING" || currentNode?.id === "retry";

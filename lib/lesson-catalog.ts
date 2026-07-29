@@ -77,6 +77,26 @@ const workbookLessonCatalog = [
   ["math_ikhim_6-2-5.pdf", 12, 13, "6. 원의 넓이를 활용해 볼까요 (수익 76~77쪽)"],
 ] as const;
 
+const unitPdfFiles: Record<string, string> = {
+  "1|분수의 나눗셈": "math_ikhim_6-1-1.pdf",
+  "1|각기둥과 각뿔": "math_ikhim_6-1-2.pdf",
+  "1|소수의 나눗셈": "math_ikhim_6-1-3.pdf",
+  "1|비와 비율": "math_ikhim_6-1-4.pdf",
+  "1|여러 가지 그래프": "math_ikhim_6-1-5.pdf",
+  "1|직육면체의 부피와 겉넓이": "math_ikhim_6-1-6.pdf",
+  "2|분수의 나눗셈": "math_ikhim_6-2-1.pdf",
+  "2|소수의 나눗셈": "math_ikhim_6-2-2.pdf",
+  "2|공간과 입체": "math_ikhim_6-2-3.pdf",
+  "2|비례식과 비례배분": "math_ikhim_6-2-4.pdf",
+  "2|원의 넓이": "math_ikhim_6-2-5.pdf",
+};
+
+export const canonicalLessonNames = (semester: number, unit: string) => {
+  if (semester === 1 && unit === "분수의 나눗셈") return firstSemesterFractionDivisionLessons.map((lesson) => lesson.name);
+  const file = unitPdfFiles[`${semester}|${unit}`];
+  return file ? workbookLessonCatalog.filter(([catalogFile]) => catalogFile === file).map(([, , , name]) => name) : [];
+};
+
 const pdfPageOf = (row: Record<string, unknown>) => {
   const imageUrl = String(row.question_image_url ?? "");
   return Number(imageUrl.match(/math_ikhim_6-[12]-[1-6]\.pdf#page=(\d+)/)?.[1] ?? 0);
