@@ -1,6 +1,6 @@
-onlyBuiltDependencies:
-  - esbuild
-  - napi-postinstall
-  - sharp
-  - unrs-resolver
-  - workerd
+allowBuilds:
+  esbuild: true
+  napi-postinstall: true
+  sharp: true
+  unrs-resolver: true
+  workerd: true
