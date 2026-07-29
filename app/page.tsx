@@ -11,7 +11,7 @@ const statusLabels: Record<LearningRecord["status"], string> = {
   NOT_STARTED: "시작 전",
   DIAGNOSING: "진단 중",
   CONCEPT_HELP: "개념 도움 중",
-  RETRYING: "재풀이 중",
+  RETRYING: "100점 도전 중",
   COMPLETED: "100점 완료",
   TEACHER_HELP_NEEDED: "교사 도움 필요",
 };
@@ -52,7 +52,7 @@ export default function Home() {
   const [activeConcept, setActiveConcept] = useState("");
   const [activeExample, setActiveExample] = useState("");
   const [retryAnswer, setRetryAnswer] = useState("");
-  const [retryResult, setRetryResult] = useState<"correct" | "wrong" | null>(null);
+  const [retryResult, setRetryResult] = useState<"correct" | "wrong" | "challenge" | null>(null);
   const [teacherPassword, setTeacherPassword] = useState("");
   const [teacherDashboard, setTeacherDashboard] = useState<TeacherDashboard | null>(null);
   const [diagnosticStartedAt, setDiagnosticStartedAt] = useState<number>(() => Date.now());
@@ -142,7 +142,7 @@ export default function Home() {
     if (!activeRecord) return;
     try {
       const payload = await json<{ record: LearningRecord }>("/api/learning", { method: "POST", body: JSON.stringify({ action: "ready-retry", recordId: activeRecord.id }) });
-      setActiveRecord(payload.record); setRetryResult(null); setRetryAnswer(""); setNotice("");
+      setActiveRecord(payload.record); setRetryResult("challenge"); setRetryAnswer(""); setNotice("");
       await loadLearning();
     } catch (error) { setNotice((error as Error).message); }
   };
@@ -159,7 +159,7 @@ export default function Home() {
   const requestTeacherHelp = async () => {
     if (!activeRecord) return;
     const payload = await json<{ record: LearningRecord }>("/api/learning", { method: "POST", body: JSON.stringify({ action: "help", recordId: activeRecord.id }) });
-    setActiveRecord(payload.record); await loadLearning(); setNotice("선생님께 도움 요청을 보냈어요.");
+    setActiveRecord(payload.record); setRetryResult(null); await loadLearning(); setNotice("선생님께 도움 요청을 보냈어요.");
   };
 
   const toggleLessonCompletion = async (semester: number, unit: string, lesson: string, completed: boolean) => {
@@ -236,7 +236,7 @@ export default function Home() {
 }
 
 function StudentView(props: {
-  student: Student | null; tab: StudentTab; setTab: (tab: StudentTab) => void; questions: Question[]; records: LearningRecord[]; completedRecords: LearningRecord[]; activeRecords: LearningRecord[]; needsHelpRecords: LearningRecord[]; selectedQuestionId: string; setSelectedQuestionId: (value: string) => void; onStart: () => void; activeRecord: LearningRecord | null; setActiveRecord: (record: LearningRecord | null) => void; currentQuestion: Question | null; currentNode: DiagnosticNode | null; activeConcept: string; activeExample: string; answerDiagnostic: (answer: string) => void; markReadyToRetry: () => void; retryAnswer: string; setRetryAnswer: (value: string) => void; retryResult: "correct" | "wrong" | null; setRetryResult: (value: "correct" | "wrong" | null) => void; submitRetry: () => void; requestTeacherHelp: () => void; lessonCompletions: LessonCompletionMap; onToggleLessonCompletion: (semester: number, unit: string, lesson: string, completed: boolean) => void; onLogout: () => void; passwordPin: string; setPasswordPin: (value: string) => void; passwordAgain: string; setPasswordAgain: (value: string) => void; onChangePassword: () => void;
+  student: Student | null; tab: StudentTab; setTab: (tab: StudentTab) => void; questions: Question[]; records: LearningRecord[]; completedRecords: LearningRecord[]; activeRecords: LearningRecord[]; needsHelpRecords: LearningRecord[]; selectedQuestionId: string; setSelectedQuestionId: (value: string) => void; onStart: () => void; activeRecord: LearningRecord | null; setActiveRecord: (record: LearningRecord | null) => void; currentQuestion: Question | null; currentNode: DiagnosticNode | null; activeConcept: string; activeExample: string; answerDiagnostic: (answer: string) => void; markReadyToRetry: () => void; retryAnswer: string; setRetryAnswer: (value: string) => void; retryResult: "correct" | "wrong" | "challenge" | null; setRetryResult: (value: "correct" | "wrong" | "challenge" | null) => void; submitRetry: () => void; requestTeacherHelp: () => void; lessonCompletions: LessonCompletionMap; onToggleLessonCompletion: (semester: number, unit: string, lesson: string, completed: boolean) => void; onLogout: () => void; passwordPin: string; setPasswordPin: (value: string) => void; passwordAgain: string; setPasswordAgain: (value: string) => void; onChangePassword: () => void;
 }) {
   const { student, tab, setTab, questions, records, completedRecords, activeRecords, needsHelpRecords, selectedQuestionId, setSelectedQuestionId, onStart, activeRecord, setActiveRecord, currentQuestion, currentNode, activeConcept, activeExample, answerDiagnostic, markReadyToRetry, retryAnswer, setRetryAnswer, retryResult, setRetryResult, submitRetry, requestTeacherHelp, lessonCompletions, onToggleLessonCompletion, onLogout, passwordPin, setPasswordPin, passwordAgain, setPasswordAgain, onChangePassword } = props;
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -248,9 +248,9 @@ function StudentView(props: {
   const [progressSemester, setProgressSemester] = useState("");
   const [progressUnit, setProgressUnit] = useState("");
   useEffect(() => {
-    setRetryResult(null);
+    setRetryResult(activeRecord?.status === "RETRYING" && activeRecord.currentDiagnosticNodeId === "offline-challenge" ? "challenge" : null);
     setRetryAnswer("");
-  }, [activeRecord?.id, setRetryAnswer]);
+  }, [activeRecord?.id, activeRecord?.status, setRetryAnswer, setRetryResult]);
   const semesterUnitOrder = semester === "1" ? ["분수의 나눗셈", "각기둥과 각뿔", "소수의 나눗셈", "비와 비율", "여러 가지 그래프", "직육면체의 부피와 겉넓이"] : ["분수의 나눗셈", "소수의 나눗셈", "공간과 입체", "비례식과 비례배분", "원의 넓이"];
   const semesterQuestions = questions.filter((question) => question.grade === 6 && String(question.semester) === semester && (question.id.startsWith("grade6-semester1-fraction-division-") || question.id.includes("-lesson")));
   const units = semesterUnitOrder.filter((unit) => semesterQuestions.some((question) => question.unit === unit));
@@ -313,6 +313,8 @@ function StudentView(props: {
 
   const progressNav = (next: StudentTab) => { setTab(next); setActiveRecord(null); setChatMessages([]); };
 
+  if (activeRecord && retryResult === "challenge") return <OfflineChallengeView student={student} question={currentQuestion} onProgress={() => { setActiveRecord(null); setRetryResult(null); setChatMessages([]); setTab("progress"); }} onNotebook={() => { setActiveRecord(null); setRetryResult(null); setChatMessages([]); setTab("notebook"); }} onTeacherHelp={requestTeacherHelp} onLogout={onLogout} />;
+
   return <main className="app-shell student-shell">
     <header className="student-header"><button className="brand-inline" onClick={() => progressNav("home")}><span className="brand-mark">100</span><strong>백점수익</strong></button><div className="student-header-info"><span>{student?.studentNumber}번 학생</span><button onClick={onLogout}>로그아웃</button></div></header>
     <div className="student-layout"><aside className="side-nav" aria-label="학생 메뉴"><button className={tab === "home" ? "active" : ""} onClick={() => progressNav("home")}>홈</button><button className={tab === "questions" ? "active" : ""} onClick={() => progressNav("questions")}>틀린 문항 선택</button><button className={tab === "notebook" ? "active" : ""} onClick={() => progressNav("notebook")}>나의 오답노트</button><button className={tab === "progress" ? "active" : ""} onClick={() => progressNav("progress")}>나의 진도</button><button className={tab === "password" ? "active" : ""} onClick={() => progressNav("password")}>비밀번호 변경</button></aside>
@@ -333,6 +335,10 @@ function StudentView(props: {
 }
 
 function StatCard({ label, value, tone }: { label: string; value: number; tone: string }) { return <div className={`stat-card ${tone}`}><span>{label}</span><strong>{value}</strong><small>문항</small></div>; }
+
+function OfflineChallengeView({ student, question, onProgress, onNotebook, onTeacherHelp, onLogout }: { student: Student | null; question: Question | null; onProgress: () => void; onNotebook: () => void; onTeacherHelp: () => void; onLogout: () => void }) {
+  return <main className="app-shell student-shell"><header className="student-header"><button className="brand-inline" onClick={onProgress}><span className="brand-mark">100</span><strong>백점수익</strong></button><div className="student-header-info"><span>{student?.studentNumber}번 학생</span><button onClick={onLogout}>로그아웃</button></div></header><section className="student-content challenge-content"><div className="study-top"><span className="status-badge status-orange">100점 도전 중</span></div>{question && <div className="problem-card"><div className="problem-meta"><span>{question.grade}학년 · {question.semester}학기 · {question.unit}</span><span>{question.lesson} · {question.questionNumber}번</span></div><p>{question.questionText}</p></div>}<div className="challenge-card panel"><div className="complete-mark">!</div><p className="eyebrow">OFFLINE CHALLENGE</p><h1>100점 도전 중!</h1><p>백점 도우미와 대화하며 알아낸 방법으로 수학익힘책의 문제를 직접 다시 풀어 보세요.</p><p>친구에게 재채점을 받아 진짜로 해결했는지 확인한 뒤, 나의 진도표에서 해당 차시를 체크해 주세요.</p><div className="study-actions"><button className="button primary" onClick={onProgress}>나의 진도에서 체크하기</button><button className="button secondary" onClick={onNotebook}>오답노트로 돌아가기</button></div><button className="button text" onClick={onTeacherHelp}>선생님께 도움 요청하기</button></div></section></main>;
+}
 
 function RecordCard({ record, question, onOpen }: { record: LearningRecord; question?: Question; onOpen?: () => void }) { return <article className={"record-card"} onClick={onOpen} onKeyDown={(event) => event.key === "Enter" && onOpen?.()} role={onOpen ? "button" : undefined} tabIndex={onOpen ? 0 : undefined}><div className="record-card-top"><span className={"status-badge " + statusClass[record.status]}>{statusLabels[record.status]}</span><span>{formatDate(record.updatedAt)}</span></div><h3>{question?.questionText}</h3><p>{question?.grade}학년 · {question?.unit} · {question?.lesson}</p>{record.diagnosedErrorTypes.length > 0 && <div className="tag-row">{record.diagnosedErrorTypes.map((error) => <span key={error}>{error}</span>)}</div>}<div className="record-details"><span>확인한 개념 {record.providedConcepts.length}개</span><span>재풀이 {record.retryCount}회</span></div></article>; }
 

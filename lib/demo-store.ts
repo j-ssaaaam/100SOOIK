@@ -505,7 +505,7 @@ export const demoStore = {
     if (option?.errorType && !record.diagnosedErrorTypes.includes(option.errorType)) record.diagnosedErrorTypes.push(option.errorType);
     if (option?.concept && !record.providedConcepts.includes(option.concept)) record.providedConcepts.push(option.concept);
     if (option?.needsTeacherHelp) record.needsTeacherHelp = true;
-    record.status = nextNodeId === "retry" ? "RETRYING" : option?.concept ? "CONCEPT_HELP" : "DIAGNOSING";
+    record.status = nextNodeId === "retry" ? "CONCEPT_HELP" : option?.concept ? "CONCEPT_HELP" : "DIAGNOSING";
     record.currentDiagnosticNodeId = nextNodeId && nextNodeId !== "retry" ? nextNodeId : record.currentDiagnosticNodeId;
     record.updatedAt = now();
     responses.push({ id: crypto.randomUUID(), learningRecordId: record.id, studentId, questionId: record.questionId, diagnosticNodeId: node?.id ?? "", questionText: node?.question ?? "", answer, nextNodeId, diagnosedErrorType: option?.errorType ?? null, responseTimeMs, createdAt: now() });
@@ -515,6 +515,7 @@ export const demoStore = {
     const record = records.get(recordId);
     if (!record || record.studentId !== studentId) return null;
     record.status = "RETRYING";
+    record.currentDiagnosticNodeId = "offline-challenge";
     record.needsTeacherHelp = false;
     record.updatedAt = now();
     return record;

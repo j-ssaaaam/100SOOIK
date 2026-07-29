@@ -122,4 +122,10 @@ input:focus,select:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(2
 .teacher-check { display:inline-grid; place-items:center; width:28px; height:28px; border-radius:50%; background:#f1f4f7; color:#a2adbb; font-size:18px; font-weight:900; }
 .teacher-check.is-complete { background:var(--green-soft); color:var(--green); }
 .teacher-progress-empty { padding:34px 18px; border:1px dashed #bac8d9; border-radius:12px; color:var(--muted); text-align:center; }
+.challenge-content { max-width:900px; margin:0 auto; }
+.challenge-card { max-width:700px; margin:24px auto 0; text-align:center; }
+.challenge-card h1 { margin:10px 0 18px; color:var(--blue-dark); font-size:clamp(34px,5vw,52px); letter-spacing:-.08em; }
+.challenge-card p:not(.eyebrow) { color:var(--muted); line-height:1.75; }
+.challenge-card .study-actions { flex-wrap:wrap; margin-top:28px; }
+.challenge-card .button.text { margin-top:12px; }
 @media (max-width:600px) { .progress-filters { grid-template-columns:1fr; gap:8px; } }
