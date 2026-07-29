@@ -108,6 +108,13 @@ export async function POST(request: Request) {
       await supabaseRest("diagnostic_responses", { method: "POST", token: session.accessToken, body: JSON.stringify({ learning_record_id: record.id, student_id: session.studentId, question_id: record.questionId, diagnostic_node_id: node?.id ?? record.currentDiagnosticNodeId, question_text: node?.question ?? "", answer, next_node_id: nextNodeId, diagnosed_error_type: option?.errorType ?? null, response_time_ms: Number(body.responseTimeMs ?? 0) }) });
       return Response.json({ record: recordFromRow(updateRows[0]), nextNodeId, concept: option?.concept ?? node?.concept ?? null, example: option?.example ?? node?.example ?? null, errorType: option?.errorType ?? null, matched: Boolean(option), feedback: option?.feedback ?? (option ? null : "답을 조금 더 구체적으로 적어 보세요. 잘 모르겠다면 ‘잘 모르겠어요’라고 적어도 괜찮아요.") });
     }
+    if (action === "ready-retry") {
+      const recordRows = await supabaseRest(`learning_records?select=*&id=eq.${body.recordId}&student_id=eq.${session.studentId}&limit=1`, { token: session.accessToken }) as Array<Record<string, unknown>>;
+      const record = recordRows[0] ? recordFromRow(recordRows[0]) : null;
+      if (!record) return Response.json({ message: "학습 기록을 찾을 수 없습니다." }, { status: 404 });
+      const updateRows = await supabaseRest(`learning_records?id=eq.${record.id}&student_id=eq.${session.studentId}`, { method: "PATCH", token: session.accessToken, headers: { Prefer: "return=representation" }, body: JSON.stringify({ status: "RETRYING", needs_teacher_help: false, updated_at: new Date().toISOString() }) }) as Array<Record<string, unknown>>;
+      return Response.json({ record: recordFromRow(updateRows[0]) });
+    }
     if (action === "retry") {
       const recordRows = await supabaseRest(`learning_records?select=*&id=eq.${body.recordId}&student_id=eq.${session.studentId}&limit=1`, { token: session.accessToken }) as Array<Record<string, unknown>>;
       const record = recordRows[0] ? recordFromRow(recordRows[0]) : null;
@@ -139,6 +146,10 @@ export async function POST(request: Request) {
   if (action === "response") {
     const result = demoStore.recordResponse(session.studentId, String(body.recordId ?? ""), String(body.answer ?? ""), Number(body.responseTimeMs ?? 0));
     return result ? Response.json(result) : Response.json({ message: "학습 기록을 찾을 수 없습니다." }, { status: 404 });
+  }
+  if (action === "ready-retry") {
+    const record = demoStore.markReadyToRetry(session.studentId, String(body.recordId ?? ""));
+    return record ? Response.json({ record }) : Response.json({ message: "학습 기록을 찾을 수 없습니다." }, { status: 404 });
   }
   if (action === "retry") {
     const result = demoStore.submitRetry(session.studentId, String(body.recordId ?? ""), String(body.answer ?? ""));

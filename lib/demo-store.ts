@@ -489,6 +489,14 @@ export const demoStore = {
     responses.push({ id: crypto.randomUUID(), learningRecordId: record.id, studentId, questionId: record.questionId, diagnosticNodeId: node?.id ?? "", questionText: node?.question ?? "", answer, nextNodeId, diagnosedErrorType: option?.errorType ?? null, responseTimeMs, createdAt: now() });
     return { record, nextNodeId, concept: option?.concept ?? node?.concept ?? null, example: option?.example ?? node?.example ?? null, errorType: option?.errorType ?? null };
   },
+  markReadyToRetry(studentId: string, recordId: string) {
+    const record = records.get(recordId);
+    if (!record || record.studentId !== studentId) return null;
+    record.status = "RETRYING";
+    record.needsTeacherHelp = false;
+    record.updatedAt = now();
+    return record;
+  },
   submitRetry(studentId: string, recordId: string, answer: string) {
     const record = records.get(recordId);
     if (!record || record.studentId !== studentId) return null;
