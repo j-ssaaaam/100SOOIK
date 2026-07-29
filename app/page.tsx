@@ -119,17 +119,17 @@ export default function Home() {
   };
 
   const answerDiagnostic = async (answer: string) => {
-    if (!activeRecord) return;
+    if (!activeRecord) return null;
     try {
       const payload = await json<{ record: LearningRecord; nextNodeId: string | null; concept: string | null; example: string | null; matched?: boolean; feedback?: string | null }>("/api/learning", { method: "POST", body: JSON.stringify({ action: "response", recordId: activeRecord.id, answer, responseTimeMs: Date.now() - diagnosticStartedAt }) });
       setActiveRecord(payload.record);
       setActiveConcept(payload.concept ?? ""); setActiveExample(payload.example ?? "");
-      if (payload.feedback) setChatMessages((messages) => [...messages, { role: "assistant", text: payload.feedback ?? "" }]);
       setDiagnosticStartedAt(Date.now());
       setNotice(payload.matched === false ? payload.feedback ?? "답을 조금 더 구체적으로 적어 보세요." : "");
       if (payload.nextNodeId === "retry") { setRetryResult(null); setRetryAnswer(""); }
       await loadLearning();
-    } catch (error) { setNotice((error as Error).message); }
+      return payload;
+    } catch (error) { setNotice((error as Error).message); return null; }
   };
 
   const submitRetry = async () => {
@@ -225,12 +225,31 @@ function StudentView(props: {
   const isRetry = activeRecord?.status === "RETRYING" || currentNode?.id === "retry";
   const currentStatus = activeRecord ? statusLabels[activeRecord.status] : "";
 
-  const submitChatInput = () => {
+  const submitChatInput = async () => {
     const value = chatInput.trim();
     if (!value) return;
     setChatMessages((messages) => [...messages, ...(currentNode ? [{ role: "assistant" as const, text: currentNode.question }] : []), { role: "student", text: value }]);
     setChatInput("");
-    answerDiagnostic(value);
+    const tutorRequest = currentQuestion
+      ? (json("/api/tutor", {
+          method: "POST",
+          body: JSON.stringify({
+            question: { grade: currentQuestion.grade, semester: currentQuestion.semester, unit: currentQuestion.unit, lesson: currentQuestion.lesson, page: currentQuestion.page, questionNumber: currentQuestion.questionNumber, questionText: currentQuestion.questionText, concepts: currentQuestion.concepts },
+            diagnostic: { stage: currentNode?.stage, question: currentNode?.question, concept: activeConcept, example: activeExample },
+            studentAnswer: value,
+            previousMessages: chatMessages.slice(-6),
+          }),
+        }) as Promise<{ enabled?: boolean; reply?: string | null }>).catch(() => ({ enabled: false, reply: null }))
+      : Promise.resolve({ enabled: false, reply: null });
+    const [tutor, learning] = await Promise.all([
+      tutorRequest,
+      answerDiagnostic(value) as unknown as Promise<{ feedback?: string | null } | null>,
+    ]);
+    const replies = [
+      tutor.reply ? { role: "assistant" as const, text: tutor.reply } : null,
+      learning?.feedback ? { role: "assistant" as const, text: learning.feedback } : null,
+    ].filter((message): message is { role: "assistant"; text: string } => Boolean(message));
+    if (replies.length) setChatMessages((messages) => [...messages, ...replies]);
   };
 
   const chatTranscript = useMemo(() => {
