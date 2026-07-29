@@ -115,5 +115,8 @@ export type TeacherDashboard = {
     completedCount: number;
     unresolvedCount: number;
     latestError: string | null;
+    lessonCompletionCount: number;
   }>;
 };
+
+export type LessonCompletionMap = Record<string, boolean>;

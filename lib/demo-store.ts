@@ -5,6 +5,7 @@ import type {
   Student,
   StudentSession,
   TeacherDashboard,
+  LessonCompletionMap,
 } from "./bakjumsu-types";
 
 const now = () => new Date().toISOString();
@@ -353,6 +354,7 @@ const students = new Map<string, Student>();
 const pinHashes = new Map<string, string>();
 const records = new Map<string, LearningRecord>();
 const responses: DiagnosticResponse[] = [];
+const lessonCompletions = new Map<string, LessonCompletionMap>();
 const sessions = new Map<string, StudentSession>();
 
 const hashPin = async (pin: string) => {
@@ -403,6 +405,15 @@ export const demoStore = {
   },
   getResponses(studentId: string) {
     return responses.filter((response) => response.studentId === studentId);
+  },
+  getLessonCompletions(studentId: string): LessonCompletionMap {
+    return { ...(lessonCompletions.get(studentId) ?? {}) };
+  },
+  setLessonCompletion(studentId: string, semester: number, unit: string, lesson: string, completed: boolean): LessonCompletionMap {
+    const current = this.getLessonCompletions(studentId);
+    current[`${semester}|${unit}|${lesson}`] = completed;
+    lessonCompletions.set(studentId, current);
+    return current;
   },
   async loginStudent(studentNumber: number, pin: string) {
     await this.initialize();
@@ -544,7 +555,7 @@ export const demoStore = {
     const dashboardStudents = this.listStudents().map((student) => {
       const studentRecords = this.getRecords(student.id);
       const currentRecord = [...studentRecords].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0] ?? null;
-      return { student, currentRecord, completedCount: studentRecords.filter((record) => record.isCompleted).length, unresolvedCount: studentRecords.filter((record) => !record.isCompleted).length, latestError: currentRecord?.diagnosedErrorTypes.at(-1) ?? null };
+      return { student, currentRecord, completedCount: studentRecords.filter((record) => record.isCompleted).length, unresolvedCount: studentRecords.filter((record) => !record.isCompleted).length, latestError: currentRecord?.diagnosedErrorTypes.at(-1) ?? null, lessonCompletionCount: Object.values(this.getLessonCompletions(student.id)).filter(Boolean).length };
     });
     return {
       totalStudents: dashboardStudents.length,

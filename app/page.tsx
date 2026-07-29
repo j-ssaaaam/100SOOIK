@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { DiagnosticNode, LearningRecord, Question, Student, TeacherDashboard } from "../lib/bakjumsu-types";
+import type { DiagnosticNode, LearningRecord, LessonCompletionMap, Question, Student, TeacherDashboard } from "../lib/bakjumsu-types";
 
 type View = "landing" | "pin" | "password" | "student" | "teacher-login" | "teacher";
 type StudentTab = "home" | "questions" | "notebook" | "progress" | "password";
@@ -46,6 +46,7 @@ export default function Home() {
   const [student, setStudent] = useState<Student | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [records, setRecords] = useState<LearningRecord[]>([]);
+  const [lessonCompletions, setLessonCompletions] = useState<LessonCompletionMap>({});
   const [selectedQuestionId, setSelectedQuestionId] = useState("");
   const [activeRecord, setActiveRecord] = useState<LearningRecord | null>(null);
   const [activeConcept, setActiveConcept] = useState("");
@@ -69,8 +70,9 @@ export default function Home() {
   const activeRecords = records.filter((record) => !record.isCompleted);
 
   const loadLearning = async () => {
-    const payload = await json<{ questions: Question[]; records: LearningRecord[]; responses?: Array<{ learningRecordId: string; questionText: string; answer: string }> }>("/api/learning");
+    const payload = await json<{ questions: Question[]; records: LearningRecord[]; responses?: Array<{ learningRecordId: string; questionText: string; answer: string }>; lessonCompletions?: LessonCompletionMap }>("/api/learning");
     setQuestions(payload.questions);
+    setLessonCompletions(payload.lessonCompletions ?? {});
     const responsesByRecord = new Map<string, Array<{ learningRecordId: string; questionText: string; answer: string }>>();
     (payload.responses ?? []).forEach((response) => responsesByRecord.set(response.learningRecordId, [...(responsesByRecord.get(response.learningRecordId) ?? []), response]));
     const nextRecords = payload.records.map((record) => ({ ...record, diagnosticResponses: responsesByRecord.get(record.id) ?? [] }));
@@ -160,6 +162,19 @@ export default function Home() {
     setActiveRecord(payload.record); await loadLearning(); setNotice("선생님께 도움 요청을 보냈어요.");
   };
 
+  const toggleLessonCompletion = async (semester: number, unit: string, lesson: string, completed: boolean) => {
+    const key = `${semester}|${unit}|${lesson}`;
+    const previous = lessonCompletions;
+    setLessonCompletions({ ...previous, [key]: completed });
+    try {
+      const payload = await json<{ lessonCompletions: LessonCompletionMap }>("/api/learning", { method: "POST", body: JSON.stringify({ action: "lesson-completion", semester, unit, lesson, completed }) });
+      setLessonCompletions(payload.lessonCompletions);
+    } catch (error) {
+      setLessonCompletions(previous);
+      setNotice((error as Error).message);
+    }
+  };
+
   const teacherLogin = async () => {
     try {
       await json("/api/auth/teacher-login", { method: "POST", body: JSON.stringify({ password: teacherPassword }) });
@@ -217,13 +232,13 @@ export default function Home() {
 
   if (view === "teacher" && teacherDashboard) return <TeacherView dashboard={teacherDashboard} notice={notice} onReset={resetPassword} onLogout={logout} />;
 
-  return <StudentView student={student} tab={studentTab} setTab={setStudentTab} questions={questions} records={records} completedRecords={completedRecords} activeRecords={activeRecords} needsHelpRecords={needsHelpRecords} selectedQuestionId={selectedQuestionId} setSelectedQuestionId={setSelectedQuestionId} onStart={startQuestion} activeRecord={activeRecord} setActiveRecord={setActiveRecord} currentQuestion={currentQuestion} currentNode={currentNode} activeConcept={activeConcept} activeExample={activeExample} answerDiagnostic={answerDiagnostic} markReadyToRetry={markReadyToRetry} retryAnswer={retryAnswer} setRetryAnswer={setRetryAnswer} retryResult={retryResult} submitRetry={submitRetry} requestTeacherHelp={requestTeacherHelp} onLogout={logout} passwordPin={pin} setPasswordPin={setPin} passwordAgain={passwordAgain} setPasswordAgain={setPasswordAgain} onChangePassword={changePassword} />;
+  return <StudentView student={student} tab={studentTab} setTab={setStudentTab} questions={questions} records={records} completedRecords={completedRecords} activeRecords={activeRecords} needsHelpRecords={needsHelpRecords} selectedQuestionId={selectedQuestionId} setSelectedQuestionId={setSelectedQuestionId} onStart={startQuestion} activeRecord={activeRecord} setActiveRecord={setActiveRecord} currentQuestion={currentQuestion} currentNode={currentNode} activeConcept={activeConcept} activeExample={activeExample} answerDiagnostic={answerDiagnostic} markReadyToRetry={markReadyToRetry} retryAnswer={retryAnswer} setRetryAnswer={setRetryAnswer} retryResult={retryResult} submitRetry={submitRetry} requestTeacherHelp={requestTeacherHelp} lessonCompletions={lessonCompletions} onToggleLessonCompletion={toggleLessonCompletion} onLogout={logout} passwordPin={pin} setPasswordPin={setPin} passwordAgain={passwordAgain} setPasswordAgain={setPasswordAgain} onChangePassword={changePassword} />;
 }
 
 function StudentView(props: {
-  student: Student | null; tab: StudentTab; setTab: (tab: StudentTab) => void; questions: Question[]; records: LearningRecord[]; completedRecords: LearningRecord[]; activeRecords: LearningRecord[]; needsHelpRecords: LearningRecord[]; selectedQuestionId: string; setSelectedQuestionId: (value: string) => void; onStart: () => void; activeRecord: LearningRecord | null; setActiveRecord: (record: LearningRecord | null) => void; currentQuestion: Question | null; currentNode: DiagnosticNode | null; activeConcept: string; activeExample: string; answerDiagnostic: (answer: string) => void; markReadyToRetry: () => void; retryAnswer: string; setRetryAnswer: (value: string) => void; retryResult: "correct" | "wrong" | null; submitRetry: () => void; requestTeacherHelp: () => void; onLogout: () => void; passwordPin: string; setPasswordPin: (value: string) => void; passwordAgain: string; setPasswordAgain: (value: string) => void; onChangePassword: () => void;
+  student: Student | null; tab: StudentTab; setTab: (tab: StudentTab) => void; questions: Question[]; records: LearningRecord[]; completedRecords: LearningRecord[]; activeRecords: LearningRecord[]; needsHelpRecords: LearningRecord[]; selectedQuestionId: string; setSelectedQuestionId: (value: string) => void; onStart: () => void; activeRecord: LearningRecord | null; setActiveRecord: (record: LearningRecord | null) => void; currentQuestion: Question | null; currentNode: DiagnosticNode | null; activeConcept: string; activeExample: string; answerDiagnostic: (answer: string) => void; markReadyToRetry: () => void; retryAnswer: string; setRetryAnswer: (value: string) => void; retryResult: "correct" | "wrong" | null; submitRetry: () => void; requestTeacherHelp: () => void; lessonCompletions: LessonCompletionMap; onToggleLessonCompletion: (semester: number, unit: string, lesson: string, completed: boolean) => void; onLogout: () => void; passwordPin: string; setPasswordPin: (value: string) => void; passwordAgain: string; setPasswordAgain: (value: string) => void; onChangePassword: () => void;
 }) {
-  const { student, tab, setTab, questions, records, completedRecords, activeRecords, needsHelpRecords, selectedQuestionId, setSelectedQuestionId, onStart, activeRecord, setActiveRecord, currentQuestion, currentNode, activeConcept, activeExample, answerDiagnostic, markReadyToRetry, retryAnswer, setRetryAnswer, retryResult, submitRetry, requestTeacherHelp, onLogout, passwordPin, setPasswordPin, passwordAgain, setPasswordAgain, onChangePassword } = props;
+  const { student, tab, setTab, questions, records, completedRecords, activeRecords, needsHelpRecords, selectedQuestionId, setSelectedQuestionId, onStart, activeRecord, setActiveRecord, currentQuestion, currentNode, activeConcept, activeExample, answerDiagnostic, markReadyToRetry, retryAnswer, setRetryAnswer, retryResult, submitRetry, requestTeacherHelp, lessonCompletions, onToggleLessonCompletion, onLogout, passwordPin, setPasswordPin, passwordAgain, setPasswordAgain, onChangePassword } = props;
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [semester, setSemester] = useState("1");
   const [selectedUnit, setSelectedUnit] = useState("");
@@ -236,9 +251,24 @@ function StudentView(props: {
   const semesterQuestions = questions.filter((question) => question.grade === 6 && String(question.semester) === semester && (question.id.startsWith("grade6-semester1-fraction-division-") || question.id.includes("-lesson")));
   const units = semesterUnitOrder.filter((unit) => semesterQuestions.some((question) => question.unit === unit));
   const progressUnitOrder = progressSemester === "1" ? ["분수의 나눗셈", "각기둥과 각뿔", "소수의 나눗셈", "비와 비율", "여러 가지 그래프", "직육면체의 부피와 겉넓이"] : progressSemester === "2" ? ["분수의 나눗셈", "소수의 나눗셈", "공간과 입체", "비례식과 비례배분", "원의 넓이"] : [];
-  const progressQuestions = progressSemester && progressUnit ? questions.filter((question) => question.grade === 6 && String(question.semester) === progressSemester && question.unit === progressUnit && question.isPlayable) : [];
+  const progressQuestions = useMemo(() => progressSemester && progressUnit ? questions.filter((question) => question.grade === 6 && String(question.semester) === progressSemester && question.unit === progressUnit && question.isPlayable) : [], [questions, progressSemester, progressUnit]);
   const progressUnits = progressUnitOrder;
-  const progressLessons = [...new Set(progressQuestions.map((question) => question.lesson))];
+  const progressLessons = useMemo(() => [...new Set(progressQuestions.map((question) => question.lesson))], [progressQuestions]);
+  useEffect(() => {
+    if (tab !== "progress" || !progressSemester || !progressUnit) return;
+    const inputs = Array.from(document.querySelectorAll<HTMLInputElement>(".progress-check"));
+    inputs.forEach((input, index) => {
+      const lesson = progressLessons[index];
+      if (!lesson) return;
+      const lessonQuestions = progressQuestions.filter((question) => question.lesson === lesson);
+      const derivedCompleted = lessonQuestions.length > 0 && lessonQuestions.every((question) => records.some((record) => record.questionId === question.id && record.status === "COMPLETED"));
+      const key = `${Number(progressSemester)}|${progressUnit}|${lesson}`;
+      input.disabled = false;
+      input.checked = Object.prototype.hasOwnProperty.call(lessonCompletions, key) ? Boolean(lessonCompletions[key]) : derivedCompleted;
+      input.onchange = () => onToggleLessonCompletion(Number(progressSemester), progressUnit, lesson, input.checked);
+    });
+    return () => inputs.forEach((input) => { input.onchange = null; });
+  }, [tab, progressSemester, progressUnit, progressLessons, progressQuestions, records, lessonCompletions, onToggleLessonCompletion]);
   const lessons = [...new Set(semesterQuestions.filter((question) => question.unit === selectedUnit).map((question) => question.lesson))];
   const selectedCatalogQuestion = semesterQuestions.find((question) => question.unit === selectedUnit && question.lesson === selectedLesson && String(question.questionNumber) === selectedQuestionNumber) ?? null;
   const isRetry = activeRecord?.status === "RETRYING" || currentNode?.id === "retry";

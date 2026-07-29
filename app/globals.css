@@ -102,4 +102,9 @@ input:focus,select:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(2
 .progress-lesson-list { display:grid; gap:0; }
 .progress-check { width:25px; height:25px; margin:0; accent-color:var(--green); }
 .progress-check:disabled { opacity:1; cursor:default; }
+.progress-check { cursor:pointer; }
+.study-actions .button.primary,
+.study-actions > button:not(.button) { min-width:132px; padding:13px 20px; border-radius:10px; background:var(--blue); color:#fff; font-size:14px; font-weight:800; text-decoration:none; }
+.study-actions .button.primary:hover,
+.study-actions > button:not(.button):hover { background:var(--blue-dark); }
 @media (max-width:600px) { .progress-filters { grid-template-columns:1fr; gap:8px; } }

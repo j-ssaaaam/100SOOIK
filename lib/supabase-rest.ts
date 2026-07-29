@@ -41,7 +41,13 @@ export async function supabasePasswordLogin(email: string, password: string) {
 export async function supabaseUser(accessToken: string) {
   const response = await fetch(`${url()}/auth/v1/user`, { headers: authHeaders(accessToken) });
   if (!response.ok) return null;
-  return await response.json() as { id: string; email?: string };
+  return await response.json() as { id: string; email?: string; user_metadata?: Record<string, unknown> };
+}
+
+export async function supabaseUpdateUserData(accessToken: string, data: Record<string, unknown>) {
+  const response = await fetch(`${url()}/auth/v1/user`, { method: "PUT", headers: authHeaders(accessToken), body: JSON.stringify({ data }) });
+  if (!response.ok) throw new Error("진도 체크 저장에 실패했습니다.");
+  return await response.json() as { user_metadata?: Record<string, unknown> };
 }
 
 export async function supabaseUpdatePassword(accessToken: string, password: string) {

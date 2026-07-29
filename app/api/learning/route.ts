@@ -1,6 +1,6 @@
 import { demoStore } from "../../../lib/demo-store";
 import type { DiagnosticResponse, LearningRecord, Question } from "../../../lib/bakjumsu-types";
-import { getCookie, isSupabaseConfigured, supabaseRest, supabaseUser } from "../../../lib/supabase-rest";
+import { getCookie, isSupabaseConfigured, supabaseRest, supabaseUpdateUserData, supabaseUser } from "../../../lib/supabase-rest";
 
 const getSession = (request: Request) => demoStore.getSession(request.headers.get("cookie")?.match(/(?:^|; )bp-session=([^;]+)/)?.[1] ?? null);
 
@@ -46,6 +46,10 @@ const recordFromRow = (row: Record<string, unknown>): LearningRecord => ({
 });
 
 const responseFromRow = (row: Record<string, unknown>): DiagnosticResponse => ({ id: String(row.id), learningRecordId: String(row.learning_record_id), studentId: String(row.student_id), questionId: String(row.question_id), diagnosticNodeId: String(row.diagnostic_node_id), questionText: String(row.question_text), answer: String(row.answer), nextNodeId: row.next_node_id ? String(row.next_node_id) : null, diagnosedErrorType: row.diagnosed_error_type ? String(row.diagnosed_error_type) : null, responseTimeMs: Number(row.response_time_ms ?? 0), createdAt: String(row.created_at) });
+const lessonCompletionsFromUser = (user: { user_metadata?: Record<string, unknown> } | null) => {
+  const value = user?.user_metadata?.bakjumsuik_lesson_completions;
+  return value && typeof value === "object" && !Array.isArray(value) ? Object.fromEntries(Object.entries(value).map(([key, completed]) => [key, Boolean(completed)])) : {};
+};
 
 const supabaseStudent = async (request: Request) => {
   const accessToken = getCookie(request, "bp-access");
@@ -56,12 +60,13 @@ const supabaseStudent = async (request: Request) => {
 };
 
 const supabaseState = async (accessToken: string, studentId: string) => {
+  const user = await supabaseUser(accessToken);
   const [questionRows, recordRows, responseRows] = await Promise.all([
     supabaseRest("questions?select=*&is_active=eq.true&order=grade.asc,unit.asc,page.asc", { token: accessToken }),
     supabaseRest(`learning_records?select=*&student_id=eq.${studentId}&order=updated_at.desc`, { token: accessToken }),
     supabaseRest(`diagnostic_responses?select=*&student_id=eq.${studentId}&order=created_at.asc`, { token: accessToken }),
   ]);
-  return { questions: (questionRows as Array<Record<string, unknown>>).map(questionFromRow), records: (recordRows as Array<Record<string, unknown>>).map(recordFromRow), responses: (responseRows as Array<Record<string, unknown>>).map(responseFromRow) };
+  return { questions: (questionRows as Array<Record<string, unknown>>).map(questionFromRow), records: (recordRows as Array<Record<string, unknown>>).map(recordFromRow), responses: (responseRows as Array<Record<string, unknown>>).map(responseFromRow), lessonCompletions: lessonCompletionsFromUser(user) };
 };
 
 export async function GET(request: Request) {
@@ -72,7 +77,7 @@ export async function GET(request: Request) {
   }
   const session = getSession(request);
   if (!session?.studentId) return Response.json({ message: "학생 로그인 후 이용할 수 있습니다." }, { status: 401 });
-  return Response.json({ questions: demoStore.getQuestions(), records: demoStore.getRecords(session.studentId), responses: demoStore.getResponses(session.studentId) });
+    return Response.json({ questions: demoStore.getQuestions(), records: demoStore.getRecords(session.studentId), responses: demoStore.getResponses(session.studentId), lessonCompletions: demoStore.getLessonCompletions(session.studentId) });
 }
 
 export async function POST(request: Request) {
@@ -81,6 +86,14 @@ export async function POST(request: Request) {
     if (!session) return Response.json({ message: "학생 로그인 후 이용할 수 있습니다." }, { status: 401 });
     const body = await request.json().catch(() => ({}));
     const action = String(body.action ?? "");
+    if (action === "lesson-completion") {
+      const user = await supabaseUser(session.accessToken);
+      const completions = lessonCompletionsFromUser(user);
+      const key = `${Number(body.semester)}|${String(body.unit ?? "")}|${String(body.lesson ?? "")}`;
+      completions[key] = Boolean(body.completed);
+      await supabaseUpdateUserData(session.accessToken, { ...(user?.user_metadata ?? {}), bakjumsuik_lesson_completions: completions });
+      return Response.json({ lessonCompletions: completions });
+    }
     if (action === "start") {
       const questionId = String(body.questionId ?? "");
       const existingRows = await supabaseRest(`learning_records?select=*&student_id=eq.${session.studentId}&question_id=eq.${questionId}&limit=1`, { token: session.accessToken }) as Array<Record<string, unknown>>;
@@ -139,6 +152,10 @@ export async function POST(request: Request) {
   if (!session?.studentId) return Response.json({ message: "학생 로그인 후 이용할 수 있습니다." }, { status: 401 });
   const body = await request.json().catch(() => ({}));
   const action = String(body.action ?? "");
+  if (action === "lesson-completion") {
+    const completions = demoStore.setLessonCompletion(session.studentId, Number(body.semester), String(body.unit ?? ""), String(body.lesson ?? ""), Boolean(body.completed));
+    return Response.json({ lessonCompletions: completions });
+  }
   if (action === "start") {
     const record = demoStore.startRecord(session.studentId, String(body.questionId ?? ""));
     return record ? Response.json({ record }) : Response.json({ message: "문항을 찾을 수 없습니다." }, { status: 404 });
