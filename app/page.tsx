@@ -247,6 +247,10 @@ function StudentView(props: {
   const [chatInput, setChatInput] = useState("");
   const [progressSemester, setProgressSemester] = useState("");
   const [progressUnit, setProgressUnit] = useState("");
+  useEffect(() => {
+    setRetryResult(null);
+    setRetryAnswer("");
+  }, [activeRecord?.id, setRetryAnswer]);
   const semesterUnitOrder = semester === "1" ? ["분수의 나눗셈", "각기둥과 각뿔", "소수의 나눗셈", "비와 비율", "여러 가지 그래프", "직육면체의 부피와 겉넓이"] : ["분수의 나눗셈", "소수의 나눗셈", "공간과 입체", "비례식과 비례배분", "원의 넓이"];
   const semesterQuestions = questions.filter((question) => question.grade === 6 && String(question.semester) === semester && (question.id.startsWith("grade6-semester1-fraction-division-") || question.id.includes("-lesson")));
   const units = semesterUnitOrder.filter((unit) => semesterQuestions.some((question) => question.unit === unit));
