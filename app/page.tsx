@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { DiagnosticNode, LearningRecord, LessonCompletionMap, Question, Student, TeacherDashboard } from "../lib/bakjumsu-types";
+import type { DiagnosticNode, DiagnosticResponse, LearningRecord, LessonCompletionMap, Question, Student, TeacherDashboard } from "../lib/bakjumsu-types";
 import { canonicalLessonNames } from "../lib/lesson-catalog";
 
 type View = "landing" | "pin" | "password" | "student" | "teacher-login" | "teacher";
@@ -71,10 +71,10 @@ export default function Home() {
   const activeRecords = records.filter((record) => !record.isCompleted);
 
   const loadLearning = async () => {
-    const payload = await json<{ questions: Question[]; records: LearningRecord[]; responses?: Array<{ learningRecordId: string; questionText: string; answer: string }>; lessonCompletions?: LessonCompletionMap }>("/api/learning");
+    const payload = await json<{ questions: Question[]; records: LearningRecord[]; responses?: DiagnosticResponse[]; lessonCompletions?: LessonCompletionMap }>("/api/learning");
     setQuestions(payload.questions);
     setLessonCompletions(payload.lessonCompletions ?? {});
-    const responsesByRecord = new Map<string, Array<{ learningRecordId: string; questionText: string; answer: string }>>();
+    const responsesByRecord = new Map<string, DiagnosticResponse[]>();
     (payload.responses ?? []).forEach((response) => responsesByRecord.set(response.learningRecordId, [...(responsesByRecord.get(response.learningRecordId) ?? []), response]));
     const nextRecords = payload.records.map((record) => ({ ...record, diagnosticResponses: responsesByRecord.get(record.id) ?? [] }));
     setRecords(nextRecords);
